@@ -5,7 +5,6 @@ mod node;
 // use node::z_pub;
 use args::Args;
 use clap::Parser;
-// use msg::stream::Stream;
 use tokio;
 
 fn subscriber_callback<T: std::fmt::Debug>(msg: T) {
@@ -23,6 +22,4 @@ async fn main() {
         Some(subscriber_callback),
     )
     .await;
-
-    tokio::signal::ctrl_c().await.unwrap();
 }

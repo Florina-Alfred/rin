@@ -2,15 +2,10 @@ mod args;
 mod msg;
 mod node;
 
-// use node::z_pub;
 use args::Args;
 use clap::Parser;
 use msg::stream::Stream;
 use tokio;
-
-fn subscriber_callback<T: std::fmt::Debug>(msg: T) {
-    println!("Callback print: {:?}", msg);
-}
 
 #[tokio::main]
 async fn main() {
@@ -25,6 +20,4 @@ async fn main() {
         Some(args.endpoints.iter().map(|x| x.as_str()).collect()),
     )
     .await;
-
-    // tokio::signal::ctrl_c().await.unwrap();
 }
