@@ -16,15 +16,13 @@ fn subscriber_callback<T: std::fmt::Debug>(msg: T) {
 async fn main() {
     let args = Args::parse();
 
-    tokio::spawn(async move {
-        node::subscribe(
-            Some(args.key_expr.as_str()),
-            Some(args.mode.as_str()),
-            Some(args.endpoints.iter().map(|x| x.as_str()).collect()),
-            Some(subscriber_callback),
-        )
-        .await;
-    });
+    node::subscribe(
+        Some(args.key_expr.as_str()),
+        Some(args.mode.as_str()),
+        Some(args.endpoints.iter().map(|x| x.as_str()).collect()),
+        Some(subscriber_callback),
+    )
+    .await;
 
     tokio::signal::ctrl_c().await.unwrap();
 }

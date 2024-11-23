@@ -6,16 +6,16 @@ use zenoh::Config;
 
 pub async fn publish(
     key_expr: Option<&str>,
-    stream: Option<impl Iterator<Item = i32>>,
-    attachment: Option<String>,
+    stream: Option<impl Iterator<Item = u32>>,
+    _attachment: Option<String>,
     mode: Option<&str>,
     endpoints: Option<Vec<&str>>,
 ) {
     zenoh::init_log_from_env_or("error");
 
     let key_expr = key_expr.unwrap_or("demo/example/zenoh-rs-pub");
-    // let attachment = attachment.unwrap_or("".to_string());
-    let attachment: Option<String> = None;
+    // let _attachment = _attachment.unwrap_or("".to_string());
+    let _attachment: Option<String> = None;
     let mode = mode.unwrap_or("client");
     let endpoints = endpoints.unwrap_or(vec!["tcp/0.0.0.0:7447"]);
     let stream = stream.unwrap();
@@ -34,16 +34,18 @@ pub async fn publish(
 
     for (idx, payload) in stream.enumerate() {
         // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-        let buf = format!("[{idx:4}] Value-{payload}");
+        tokio::time::sleep(tokio::time::Duration::from_nanos(1)).await;
+        let buf = format!("[{idx:5}] Value-{payload}");
         common::logger(format!("<< [Publisher] Data ('{}': '{}')...", &key_expr, buf).to_string());
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
-            .attachment(attachment.clone())
+            .attachment(_attachment.clone())
             .await
             .unwrap();
     }
     common::logger("Closing publisher...".to_string());
+    // publisher.close().await.unwrap();
 }
 
 pub async fn subscribe(

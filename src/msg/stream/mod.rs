@@ -1,23 +1,30 @@
 #[derive(Debug, Clone)]
 pub struct Stream {
-    a: i32,
+    start: Option<u32>,
+    num: u32,
 }
 impl Stream {
     pub fn new(start: Option<u32>) -> Self {
         if let Some(start) = start {
-            Stream { a: start as i32 }
+            Stream {
+                start: Some(start),
+                num: start as u32,
+            }
         } else {
-            Stream { a: 0 }
+            Stream {
+                start: None,
+                num: 0,
+            }
         }
     }
 }
 impl Iterator for Stream {
-    type Item = i32;
+    type Item = u32;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.a >= 10_000 {
+        if self.num >= self.start.unwrap() + 10 {
             return None;
         }
-        self.a += 2;
-        Some(self.a)
+        self.num += 2;
+        Some(self.num)
     }
 }
