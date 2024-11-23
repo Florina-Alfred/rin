@@ -2,7 +2,6 @@ mod args;
 mod msg;
 mod node;
 
-// use node::z_pub;
 use args::Args;
 use clap::Parser;
 use tokio;
