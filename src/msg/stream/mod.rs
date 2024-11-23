@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)] a
+#[derive(Debug, Clone)]
 pub struct Stream {
     a: i32,
 }
@@ -14,7 +14,7 @@ impl Stream {
 impl Iterator for Stream {
     type Item = i32;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.a >= 10 {
+        if self.a >= 10_000 {
             return None;
         }
         self.a += 2;

@@ -3,6 +3,9 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
+    #[arg(short, long, default_value_t = 0)]
+    pub start: u32,
+
     #[arg(short, long, default_value = "demo/example/zenoh-rs-pub")]
     pub key_expr: String,
 

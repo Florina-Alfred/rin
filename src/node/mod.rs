@@ -1,7 +1,6 @@
 pub mod common;
 
 use serde_json::json;
-use std::fmt::Debug;
 use zenoh::bytes::Encoding;
 use zenoh::Config;
 
@@ -30,12 +29,11 @@ pub async fn publish(
     common::logger("Opening session...".to_string());
     let session = zenoh::open(config).await.unwrap();
 
-    common::logger("Declaring Publisher on '{key_expr}'...".to_string());
+    common::logger(format!("Declaring Publisher on '{}'...", &key_expr).to_string());
     let publisher = session.declare_publisher(key_expr).await.unwrap();
 
-    common::logger("Press CTRL-C to quit...".to_string());
     for (idx, payload) in stream.enumerate() {
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         let buf = format!("[{idx:4}] Value-{payload}");
         common::logger(format!("<< [Publisher] Data ('{}': '{}')...", &key_expr, buf).to_string());
         publisher
@@ -48,14 +46,12 @@ pub async fn publish(
     common::logger("Closing publisher...".to_string());
 }
 
-pub async fn subscribe<T>(
+pub async fn subscribe(
     key_expr: Option<&str>,
     mode: Option<&str>,
     endpoints: Option<Vec<&str>>,
-    callback: Option<fn(T)>,
-) where
-    T: std::fmt::Debug,
-{
+    callback: Option<fn(String)>,
+) {
     zenoh::init_log_from_env_or("error");
 
     let key_expr = key_expr.unwrap_or("demo/example/zenoh-rs-pub");
@@ -74,7 +70,6 @@ pub async fn subscribe<T>(
     common::logger(format!("Declaring Subscriber on '{}'...", &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
 
-    common::logger("Press CTRL-C to quit...".to_string());
     while let Ok(sample) = subscriber.recv_async().await {
         let payload = sample
             .payload()
@@ -91,10 +86,10 @@ pub async fn subscribe<T>(
             .to_string(),
         );
 
-        // Pass the payload as a String directly to the callback
+        let msg = payload.clone().to_string();
         if let Some(callback) = callback {
             tokio::spawn(async move {
-                callback(payload); // Pass payload directly as String
+                callback(msg);
             });
         }
 

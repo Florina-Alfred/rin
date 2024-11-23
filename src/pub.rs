@@ -16,19 +16,6 @@ fn subscriber_callback<T: std::fmt::Debug>(msg: T) {
 async fn main() {
     let args = Args::parse();
 
-    tokio::spawn(async move {
-        node::subscribe(
-            Some(args.key_expr.as_str()),
-            Some(args.mode.as_str()),
-            Some(args.endpoints.iter().map(|x| x.as_str()).collect()),
-            Some(subscriber_callback),
-        )
-        .await;
-    });
-
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-
-    let args = Args::parse();
     let stream_struct = Stream::new(Some(args.start));
     tokio::spawn(async move {
         node::publish(

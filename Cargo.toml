@@ -3,13 +3,13 @@ name = "simu"
 version = "0.1.0"
 edition = "2021"
 
-# [[bin]]
-# name = "z_pub"
-# path = "src/z_pub.rs"
-#
-# [[bin]]
-# name = "z_sub"
-# path = "src/z_sub.rs"
+[[bin]]
+name = "pub"
+path = "src/pub.rs"
+
+[[bin]]
+name = "sub"
+path = "src/sub.rs"
 
 
 [dependencies]
