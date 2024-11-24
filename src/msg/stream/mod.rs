@@ -4,6 +4,7 @@ pub struct Stream {
     num: u32,
 }
 impl Stream {
+    #[allow(dead_code)]
     pub fn new(start: Option<u32>) -> Self {
         if let Some(start) = start {
             Stream {
@@ -21,10 +22,10 @@ impl Stream {
 impl Iterator for Stream {
     type Item = u32;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.num >= self.start.unwrap() + 10 {
+        if self.num >= self.start.unwrap() + 100 {
             return None;
         }
-        self.num += 2;
+        self.num += 5;
         Some(self.num)
     }
 }

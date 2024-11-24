@@ -13,11 +13,11 @@ async fn main() {
 
     let stream_struct = Stream::new(Some(args.start));
     node::publish(
-        Some(args.key_expr.as_str()),
-        Some(stream_struct),
+        args.key_expr.as_str(),
+        stream_struct,
         None,
-        Some(args.mode.as_str()),
-        Some(args.endpoints.iter().map(|x| x.as_str()).collect()),
+        args.mode.as_str(),
+        args.endpoints.iter().map(|x| x.as_str()).collect(),
     )
     .await;
 }

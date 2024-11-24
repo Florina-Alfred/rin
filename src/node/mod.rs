@@ -4,22 +4,17 @@ use serde_json::json;
 use zenoh::bytes::Encoding;
 use zenoh::Config;
 
+#[allow(dead_code)]
 pub async fn publish(
-    key_expr: Option<&str>,
-    stream: Option<impl Iterator<Item = u32>>,
+    key_expr: &str,
+    stream: impl Iterator<Item = u32>,
     _attachment: Option<String>,
-    mode: Option<&str>,
-    endpoints: Option<Vec<&str>>,
+    mode: &str,
+    endpoints: Vec<&str>,
 ) {
     zenoh::init_log_from_env_or("error");
 
-    let key_expr = key_expr.unwrap_or("demo/example/zenoh-rs-pub");
-    // let _attachment = _attachment.unwrap_or("".to_string());
     let _attachment: Option<String> = None;
-    let mode = mode.unwrap_or("client");
-    let endpoints = endpoints.unwrap_or(vec!["tcp/0.0.0.0:7447"]);
-    let stream = stream.unwrap();
-
     let mut config = Config::default();
     config
         .insert_json5("mode", &json!(mode).to_string())
@@ -33,7 +28,6 @@ pub async fn publish(
     let publisher = session.declare_publisher(key_expr).await.unwrap();
 
     for (idx, payload) in stream.enumerate() {
-        // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         tokio::time::sleep(tokio::time::Duration::from_nanos(1)).await;
         let buf = format!("[{idx:5}] Value-{payload}");
         common::logger(format!("<< [Publisher] Data ('{}': '{}')...", &key_expr, buf).to_string());
@@ -45,20 +39,15 @@ pub async fn publish(
             .unwrap();
     }
     common::logger("Closing publisher...".to_string());
-    // publisher.close().await.unwrap();
 }
 
-pub async fn subscribe(
-    key_expr: Option<&str>,
-    mode: Option<&str>,
-    endpoints: Option<Vec<&str>>,
-    callback: Option<fn(String)>,
-) {
+#[allow(dead_code)]
+// pub async fn subscribe(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: fn(String)) {
+pub async fn subscribe<F>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: F)
+where
+    F: Fn(&dyn std::any::Any) -> Result<(), Box<dyn std::error::Error>>,
+{
     zenoh::init_log_from_env_or("error");
-
-    let key_expr = key_expr.unwrap_or("demo/example/zenoh-rs-pub");
-    let mode = mode.unwrap_or("client");
-    let endpoints = endpoints.unwrap_or(vec!["tcp/0.0.0.0:7447"]);
 
     let mut config = Config::default();
     config
@@ -89,10 +78,9 @@ pub async fn subscribe(
         );
 
         let msg = payload.clone().to_string();
-        if let Some(callback) = callback {
-            tokio::spawn(async move {
-                callback(msg);
-            });
+        // let msg = Box::new(msg);
+        if let Err(e) = callback(&msg) {
+            common::logger(format!("Error: {:?}", e).to_string());
         }
 
         if let Some(att) = sample.attachment() {
