@@ -22,7 +22,7 @@ impl Stream {
 impl Iterator for Stream {
     type Item = u32;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.num >= self.start.unwrap() + 100 {
+        if self.num >= self.start.unwrap() + 10 {
             return None;
         }
         self.num += 5;

@@ -1,6 +1,7 @@
 pub mod common;
 
 use serde_json::json;
+use std::any::Any;
 use zenoh::bytes::Encoding;
 use zenoh::Config;
 
@@ -43,9 +44,12 @@ pub async fn publish(
 
 #[allow(dead_code)]
 // pub async fn subscribe(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: fn(String)) {
-pub async fn subscribe<F>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: F)
+pub async fn subscribe<F, T>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: F)
 where
-    F: Fn(&dyn std::any::Any) -> Result<(), Box<dyn std::error::Error>>,
+    // F: Fn(T) -> Result<(), Box<dyn std::error::Error>>,
+    // F: Fn(String) -> Result<(), Box<dyn std::error::Error>>,
+    // F: Fn(&dyn std::any::Any) -> Result<(), Box<dyn std::error::Error>>,
+    F: Fn(Box<dyn Any>) -> Result<T, String>,
 {
     zenoh::init_log_from_env_or("error");
 
@@ -78,8 +82,9 @@ where
         );
 
         let msg = payload.clone().to_string();
-        // let msg = Box::new(msg);
-        if let Err(e) = callback(&msg) {
+        common::logger(format!("String: {}", msg).to_string());
+        let msg: Box<dyn Any> = Box::new(msg);
+        if let Err(e) = callback(msg) {
             common::logger(format!("Error: {:?}", e).to_string());
         }
 
