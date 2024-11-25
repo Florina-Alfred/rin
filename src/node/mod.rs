@@ -42,14 +42,22 @@ pub async fn publish(
     common::logger("Closing publisher...".to_string());
 }
 
+#[derive(Debug)]
+pub enum CallbackInput {
+    TypeString(String),
+    TypeInt(i32),
+    TypeBytes(u8),
+}
+
 #[allow(dead_code)]
-// pub async fn subscribe(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: fn(String)) {
-pub async fn subscribe<F, T>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: F)
-where
-    // F: Fn(T) -> Result<(), Box<dyn std::error::Error>>,
-    // F: Fn(String) -> Result<(), Box<dyn std::error::Error>>,
-    // F: Fn(&dyn std::any::Any) -> Result<(), Box<dyn std::error::Error>>,
-    F: Fn(Box<dyn Any>) -> Result<T, String>,
+pub async fn subscribe<T>(
+    key_expr: &str,
+    mode: &str,
+    endpoints: Vec<&str>,
+    type_id: T,
+    callback: fn(String),
+) where
+    T: std::fmt::Debug,
 {
     zenoh::init_log_from_env_or("error");
 
@@ -80,13 +88,12 @@ where
             )
             .to_string(),
         );
+        println!("Type ID: {:?}", type_id);
 
         let msg = payload.clone().to_string();
-        common::logger(format!("String: {}", msg).to_string());
-        let msg: Box<dyn Any> = Box::new(msg);
-        if let Err(e) = callback(msg) {
-            common::logger(format!("Error: {:?}", e).to_string());
-        }
+        // let msg: i32 = 128;
+        // common::logger(format!("String: {}", msg).to_string());
+        callback(msg);
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
