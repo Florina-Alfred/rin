@@ -1,7 +1,9 @@
 pub mod common;
+// pub mod msg;
 
+use crate::msg::stream::Update;
 use serde_json::json;
-use std::any::Any;
+use std::fmt::Debug;
 use zenoh::bytes::Encoding;
 use zenoh::Config;
 
@@ -54,10 +56,10 @@ pub async fn subscribe<T>(
     key_expr: &str,
     mode: &str,
     endpoints: Vec<&str>,
-    type_id: T,
-    callback: fn(String),
+    callback: impl Fn(T),
+    // )
 ) where
-    T: std::fmt::Debug,
+    T: Default + Update + Clone,
 {
     zenoh::init_log_from_env_or("error");
 
@@ -73,6 +75,7 @@ pub async fn subscribe<T>(
     common::logger(format!("Declaring Subscriber on '{}'...", &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
 
+    let mut msg = T::default();
     while let Ok(sample) = subscriber.recv_async().await {
         let payload = sample
             .payload()
@@ -88,12 +91,13 @@ pub async fn subscribe<T>(
             )
             .to_string(),
         );
-        println!("Type ID: {:?}", type_id);
+        // println!("Type ID: {:?}", type_id);
 
-        let msg = payload.clone().to_string();
-        // let msg: i32 = 128;
-        // common::logger(format!("String: {}", msg).to_string());
-        callback(msg);
+        let value = payload.clone().to_string();
+        // let value: i32 = 128;
+        common::logger(format!("String: {}", value).to_string());
+        msg.update(value);
+        callback(msg.clone());
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
