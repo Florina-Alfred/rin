@@ -1,7 +1,7 @@
 pub mod common;
 // pub mod msg;
 
-use crate::msg::stream::Update;
+use crate::msg::stream::Message;
 use serde_json::json;
 use std::fmt::Debug;
 use zenoh::bytes::Encoding;
@@ -10,7 +10,7 @@ use zenoh::Config;
 #[allow(dead_code)]
 pub async fn publish(
     key_expr: &str,
-    stream: impl Iterator<Item = u32>,
+    stream: impl Iterator<Item = u32> + Message,
     _attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -31,9 +31,13 @@ pub async fn publish(
     let publisher = session.declare_publisher(key_expr).await.unwrap();
 
     for (idx, payload) in stream.enumerate() {
+        common::logger(format!("Sending data ({}): {}", idx + 1, payload).to_string());
         tokio::time::sleep(tokio::time::Duration::from_nanos(1)).await;
-        let buf = format!("[{idx:5}] Value-{payload}");
-        common::logger(format!("<< [Publisher] Data ('{}': '{}')...", &key_expr, buf).to_string());
+        let buf = format!("{payload}");
+        common::logger(format!(
+            "<< [Publisher] Data ('{}': '{}')...",
+            &key_expr, payload
+        ));
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
@@ -59,7 +63,7 @@ pub async fn subscribe<T>(
     callback: impl Fn(T),
     // )
 ) where
-    T: Default + Update + Clone,
+    T: Default + Message + Clone,
 {
     zenoh::init_log_from_env_or("error");
 
@@ -91,11 +95,9 @@ pub async fn subscribe<T>(
             )
             .to_string(),
         );
-        // println!("Type ID: {:?}", type_id);
 
         let value = payload.clone().to_string();
-        // let value: i32 = 128;
-        common::logger(format!("String: {}", value).to_string());
+        common::logger(format!("Value received: {}", value).to_string());
         msg.update(value);
         callback(msg.clone());
 

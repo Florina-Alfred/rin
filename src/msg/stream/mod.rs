@@ -1,4 +1,4 @@
-pub trait Update {
+pub trait Message {
     fn update(&mut self, msg: String);
 }
 
@@ -6,7 +6,6 @@ pub trait Update {
 pub struct Stream {
     start: Option<u32>,
     num: u32,
-    value: String,
 }
 
 impl Stream {
@@ -16,13 +15,11 @@ impl Stream {
             Stream {
                 start: Some(start),
                 num: start as u32,
-                value: "".to_string(),
             }
         } else {
             Stream {
                 start: None,
                 num: 0,
-                value: "".to_string(),
             }
         }
     }
@@ -39,10 +36,9 @@ impl Iterator for Stream {
     }
 }
 
-impl Update for Stream {
+impl Message for Stream {
     fn update(&mut self, msg: String) {
-        // self.next();
-        self.value = msg.clone();
+        self.num = msg.parse::<u32>().unwrap();
         println!("Stream update: {}", msg);
     }
 }
@@ -53,7 +49,7 @@ struct MachineStruct {
     count: u32,
 }
 
-impl Update for MachineStruct {
+impl Message for MachineStruct {
     fn update(&mut self, msg: String) {
         self.message = msg;
         self.count += 1;
@@ -66,7 +62,7 @@ struct UserStruct {
     new: String,
 }
 
-impl Update for UserStruct {
+impl Message for UserStruct {
     fn update(&mut self, msg: String) {
         self.old = self.new.clone();
         self.new = msg.clone();
