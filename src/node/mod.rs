@@ -10,7 +10,7 @@ use zenoh::Config;
 #[allow(dead_code)]
 pub async fn publish(
     key_expr: &str,
-    mut stream: impl Message + Debug + Serialize,
+    stream: impl Message + Debug + Serialize,
     _attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,

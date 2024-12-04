@@ -5,8 +5,8 @@ use std::fmt::Debug;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Stream {
-    start: Option<u32>,
-    num: u32,
+    pub start: Option<u32>,
+    pub num: u32,
 }
 
 impl Stream {
@@ -43,7 +43,10 @@ pub struct UserMessage {
 
 impl Message for UserMessage {
     fn next(&mut self) -> Option<&mut Self> {
+        self.number = (self.number.parse::<u32>().unwrap() + 1).to_string();
+        self.value = format!("value {}", self.number);
         self.count += 1;
+        self.bytes = self.bytes.iter().map(|x| x + 1).collect();
         Some(self)
     }
 }
@@ -56,6 +59,7 @@ pub struct MachineMessage {
 
 impl Message for MachineMessage {
     fn next(&mut self) -> Option<&mut Self> {
+        self.message = format!("message {}", self.count);
         self.count += 1;
         Some(self)
     }
