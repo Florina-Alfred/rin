@@ -1,7 +1,7 @@
 pub mod common;
-// pub mod msg;
 
-use crate::msg::stream::Message;
+use common::Message;
+use serde::Serialize;
 use serde_json::json;
 use std::fmt::Debug;
 use zenoh::bytes::Encoding;
@@ -10,7 +10,7 @@ use zenoh::Config;
 #[allow(dead_code)]
 pub async fn publish(
     key_expr: &str,
-    stream: impl Iterator<Item = u32> + Message,
+    mut stream: impl Message + Debug + Serialize,
     _attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -30,22 +30,18 @@ pub async fn publish(
     common::logger(format!("Declaring Publisher on '{}'...", &key_expr).to_string());
     let publisher = session.declare_publisher(key_expr).await.unwrap();
 
-    for (idx, payload) in stream.enumerate() {
-        common::logger(format!("Sending data ({}): {}", idx + 1, payload).to_string());
-        tokio::time::sleep(tokio::time::Duration::from_nanos(1)).await;
-        let buf = format!("{payload}");
-        common::logger(format!(
-            "<< [Publisher] Data ('{}': '{}')...",
-            &key_expr, payload
-        ));
-        publisher
-            .put(buf)
-            .encoding(Encoding::TEXT_PLAIN)
-            .attachment(_attachment.clone())
-            .await
-            .unwrap();
-    }
-    common::logger("Closing publisher...".to_string());
+    common::logger(format!("Sending data: {:?}", stream).to_string());
+    let buf = stream.ser();
+    common::logger(format!(
+        "<< [Publisher] Serialized data ('{}': '{:?}')...",
+        &key_expr, buf
+    ));
+    publisher
+        .put(buf)
+        .encoding(Encoding::TEXT_PLAIN)
+        .attachment(_attachment.clone())
+        .await
+        .unwrap();
 }
 
 #[derive(Debug)]
@@ -56,14 +52,9 @@ pub enum CallbackInput {
 }
 
 #[allow(dead_code)]
-pub async fn subscribe<T>(
-    key_expr: &str,
-    mode: &str,
-    endpoints: Vec<&str>,
-    callback: impl Fn(T),
-    // )
-) where
-    T: Default + Message + Clone,
+pub async fn subscribe<T>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: impl Fn(T))
+where
+    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     zenoh::init_log_from_env_or("error");
 
@@ -79,7 +70,7 @@ pub async fn subscribe<T>(
     common::logger(format!("Declaring Subscriber on '{}'...", &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
 
-    let mut msg = T::default();
+    let msg = T::default();
     while let Ok(sample) = subscriber.recv_async().await {
         let payload = sample
             .payload()
@@ -98,7 +89,7 @@ pub async fn subscribe<T>(
 
         let value = payload.clone().to_string();
         common::logger(format!("Value received: {}", value).to_string());
-        msg.update(value);
+        msg.deser(value);
         callback(msg.clone());
 
         if let Some(att) = sample.attachment() {

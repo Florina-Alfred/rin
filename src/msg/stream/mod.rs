@@ -1,8 +1,9 @@
-pub trait Message {
-    fn update(&mut self, msg: String);
-}
+use serde::{Deserialize, Serialize};
+// use serde_json;
+use crate::node::common::Message;
+use std::fmt::Debug;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Stream {
     start: Option<u32>,
     num: u32,
@@ -25,46 +26,37 @@ impl Stream {
     }
 }
 
-impl Iterator for Stream {
-    type Item = u32;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.num >= self.start.unwrap() + 10 {
-            return None;
-        }
-        self.num += 5;
-        Some(self.num)
-    }
-}
-
 impl Message for Stream {
-    fn update(&mut self, msg: String) {
-        self.num = msg.parse::<u32>().unwrap();
-        println!("Stream update: {}", msg);
+    fn next(&mut self) -> Option<&mut Self> {
+        self.num += 5;
+        Some(self)
     }
 }
 
-#[derive(Default, Debug, Clone)]
-struct MachineStruct {
-    message: String,
-    count: u32,
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct UserMessage {
+    pub number: String,
+    pub value: String,
+    pub count: u32,
+    pub bytes: Vec<u8>,
 }
 
-impl Message for MachineStruct {
-    fn update(&mut self, msg: String) {
-        self.message = msg;
+impl Message for UserMessage {
+    fn next(&mut self) -> Option<&mut Self> {
         self.count += 1;
+        Some(self)
     }
 }
 
-#[derive(Debug, Default, Clone)]
-struct UserStruct {
-    old: String,
-    new: String,
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct MachineMessage {
+    pub message: String,
+    pub count: u32,
 }
 
-impl Message for UserStruct {
-    fn update(&mut self, msg: String) {
-        self.old = self.new.clone();
-        self.new = msg.clone();
+impl Message for MachineMessage {
+    fn next(&mut self) -> Option<&mut Self> {
+        self.count += 1;
+        Some(self)
     }
 }

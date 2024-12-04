@@ -4,7 +4,7 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::stream::Stream;
+use msg::stream::{MachineMessage, Stream, UserMessage};
 use tokio;
 
 fn generic_callback<T: std::fmt::Debug>(input: T) {
@@ -13,6 +13,14 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 
 fn stream_callback(input: Stream) {
     println!("Stream callback: {:?}", input);
+}
+
+fn user_message_callback(input: UserMessage) {
+    println!("User message callback: {:?}", input);
+}
+
+fn machine_message_callback(input: MachineMessage) {
+    println!("Machine message callback: {:?}", input);
 }
 
 fn string_callback(input: String) {
@@ -56,7 +64,9 @@ async fn main() {
         args.endpoints.iter().map(|x| x.as_str()).collect(),
         // generic_callback,
         // string_callback,
-        stream_callback,
+        // stream_callback,
+        // user_message_callback,
+        machine_message_callback,
     )
     .await;
 }
