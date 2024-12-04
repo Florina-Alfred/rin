@@ -26,8 +26,7 @@ async fn main() {
     //     count: 0,
     // };
 
-    for _ in 0..5 {
-        pub_msg_struct.next().unwrap();
+    for _ in 0..1 {
         println!("Current Message: {:?}", pub_msg_struct);
         node::publish(
             args.key_expr.as_str(),
@@ -37,5 +36,6 @@ async fn main() {
             args.endpoints.iter().map(|x| x.as_str()).collect(),
         )
         .await;
+        pub_msg_struct.next().unwrap();
     }
 }

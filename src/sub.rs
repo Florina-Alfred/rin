@@ -44,8 +44,13 @@ async fn main() {
         args.endpoints.iter().map(|x| x.as_str()).collect(),
         // generic_callback,
         // stream_callback,
-        user_message_callback,
+        // user_message_callback,
         // machine_message_callback,
+        vec![
+            user_message_callback,
+            user_message_callback,
+            user_message_callback,
+        ],
     )
     .await;
 }

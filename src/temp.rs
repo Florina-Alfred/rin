@@ -1,54 +1,30 @@
-trait Update {
-    fn update(&mut self, msg: String);
+fn takes_slice(slice: &[i32]) {
+    println!("Got a slice: {:?}", slice);
 }
 
-#[derive(Debug, Clone, Default)]
-struct MachineStruct {
-    message: String,
-    count: u32,
+fn empty_fn_1() {
+    println!("Empty function 1");
 }
 
-impl Update for MachineStruct {
-    fn update(&mut self, msg: String) {
-        self.message = msg;
-        self.count += 1;
-    }
+fn empty_fn_2() {
+    println!("Empty function 2");
 }
 
-#[derive(Debug, Default, Clone)]
-struct UserStruct {
-    old: String,
-    new: String,
+fn empty_fn_3() {
+    println!("Empty function 3");
 }
 
-impl Update for UserStruct {
-    fn update(&mut self, msg: String) {
-        self.old = self.new.clone();
-        self.new = msg.clone();
-    }
-}
-
-fn machine_struct_callback(msg: MachineStruct) {
-    println!("Calling from machine CB: {:?}", msg);
-}
-
-fn user_struct_callback(msg: UserStruct) {
-    println!("Calling from user CB: {:?}", msg);
-}
-
-fn subscribe<T>(cb: impl Fn(T))
-where
-    T: Default + Update + Clone, // Use Clone instead of Copy
-{
-    let mut msg = T::default(); // Create msg outside the loop, so it's reused
-    for i in 0..5 {
-        println!("Looping: {}", i);
-        msg.update(format!("Message {}", i));
-        cb(msg.clone()); // Use clone to pass a copy of the current state of msg
+fn takes_slice_of_fns(slice: &[fn()]) {
+    for f in slice {
+        f();
     }
 }
 
 fn main() {
-    subscribe(user_struct_callback);
-    subscribe(machine_struct_callback);
+    println!("Hello, world!");
+    let numbers = vec![1, 2, 3, 4, 5];
+    let vec_of_fns: Vec<fn()> = vec![empty_fn_1, empty_fn_2, empty_fn_3];
+    // let vec_of_fns: Vec<fn()> = vec![empty_fn_1, empty_fn_1, empty_fn_1];
+    takes_slice(&numbers);
+    takes_slice_of_fns(&vec_of_fns);
 }

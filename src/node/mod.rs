@@ -52,7 +52,7 @@ pub enum CallbackInput {
 }
 
 #[allow(dead_code)]
-pub async fn subscribe<T>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: impl Fn(T))
+pub async fn subscribe<T>(key_expr: &str, mode: &str, endpoints: Vec<&str>, callback: Vec<fn(T)>)
 where
     T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
@@ -90,7 +90,9 @@ where
         let value = payload.clone().to_string();
         common::logger(format!("Value received: {}", value).to_string());
         msg.deser(value);
-        callback(msg.clone());
+        for f in &callback {
+            f(msg.clone());
+        }
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
