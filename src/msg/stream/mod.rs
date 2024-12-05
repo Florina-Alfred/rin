@@ -28,8 +28,12 @@ impl Stream {
 
 impl Message for Stream {
     fn next(&mut self) -> Option<&mut Self> {
-        self.num += 5;
-        Some(self)
+        self.num += 1;
+        if self.num > 10 {
+            None
+        } else {
+            Some(self)
+        }
     }
 }
 
@@ -47,7 +51,11 @@ impl Message for UserMessage {
         self.value = format!("value {}", self.number);
         self.count += 1;
         self.bytes = self.bytes.iter().map(|x| x + 1).collect();
-        Some(self)
+        if self.count > 10 {
+            None
+        } else {
+            Some(self)
+        }
     }
 }
 

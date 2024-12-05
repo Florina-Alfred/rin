@@ -47,9 +47,10 @@ async fn main() {
         // user_message_callback,
         // machine_message_callback,
         vec![
-            user_message_callback,
-            user_message_callback,
-            user_message_callback,
+            stream_callback,
+            // user_message_callback,
+            // user_message_callback,
+            // user_message_callback,
         ],
     )
     .await;

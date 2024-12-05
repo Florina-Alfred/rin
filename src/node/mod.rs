@@ -10,7 +10,7 @@ use zenoh::Config;
 #[allow(dead_code)]
 pub async fn publish(
     key_expr: &str,
-    stream: impl Message + Debug + Serialize,
+    mut stream: impl Message + Debug + Serialize,
     _attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -31,17 +31,24 @@ pub async fn publish(
     let publisher = session.declare_publisher(key_expr).await.unwrap();
 
     common::logger(format!("Sending data: {:?}", stream).to_string());
-    let buf = stream.ser();
-    common::logger(format!(
-        "<< [Publisher] Serialized data ('{}': '{:?}')...",
-        &key_expr, buf
-    ));
-    publisher
-        .put(buf)
-        .encoding(Encoding::TEXT_PLAIN)
-        .attachment(_attachment.clone())
-        .await
-        .unwrap();
+
+    loop {
+        let buf = stream.ser();
+        common::logger(format!(
+            "<< [Publisher] Serialized data ('{}': '{:?}')...",
+            &key_expr, buf
+        ));
+        publisher
+            .put(buf)
+            .encoding(Encoding::TEXT_PLAIN)
+            .attachment(_attachment.clone())
+            .await
+            .unwrap();
+        match stream.next() {
+            Some(_) => (),
+            None => break,
+        }
+    }
 }
 
 #[derive(Debug)]
