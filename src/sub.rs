@@ -42,95 +42,70 @@ fn machine_message_callback(input: MachineMessage) {
 async fn main() {
     let args = Args::parse();
 
-    let subscriber = node::Subscriber::new(
-        args.key_expr.as_str(),
-        args.mode.as_str(),
-        Stream::default(),
-        args.endpoints.iter().map(|x| x.as_str()).collect(),
-    )
-    .await
-    .unwrap();
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "Stream Received message:- Start: {:?} Num: {:?}",
-        msg.start, msg.num
-    );
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "Stream Received message:- Start: {:?} Num: {:?}",
-        msg.start, msg.num
-    );
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "Stream Received message:- Start: {:?} Num: {:?}",
-        msg.start, msg.num
-    );
-
-    let subscriber = node::Subscriber::new(
-        args.key_expr.as_str(),
-        args.mode.as_str(),
-        UserMessage::default(),
-        args.endpoints.iter().map(|x| x.as_str()).collect(),
-    )
-    .await
-    .unwrap();
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "UserMessage Received message:- Number: {} Value: {} Count: {} Bytes: {:?}",
-        msg.number, msg.value, msg.count, msg.bytes
-    );
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "UserMessage Received message:- Number: {} Value: {} Count: {} Bytes: {:?}",
-        msg.number, msg.value, msg.count, msg.bytes
-    );
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "UserMessage Received message:- Number: {} Value: {} Count: {} Bytes: {:?}",
-        msg.number, msg.value, msg.count, msg.bytes
-    );
-
-    let subscriber = node::Subscriber::new(
-        args.key_expr.as_str(),
-        args.mode.as_str(),
-        MachineMessage::default(),
-        args.endpoints.iter().map(|x| x.as_str()).collect(),
-    )
-    .await
-    .unwrap();
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "MachineMessage Received message:- Message: {} Count: {}",
-        msg.message, msg.count
-    );
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "MachineMessage Received message:- Message: {} Count: {}",
-        msg.message, msg.count
-    );
-    let msg = subscriber.receive_msg().await.unwrap();
-    println!(
-        "MachineMessage Received message:- Message: {} Count: {}",
-        msg.message, msg.count
-    );
-
-    // node::start_subscriber(
+    // let subscriber = node::Subscriber::new(
     //     args.key_expr.as_str(),
     //     args.mode.as_str(),
+    //     Stream::default(),
     //     args.endpoints.iter().map(|x| x.as_str()).collect(),
-    //     // generic_callback,
-    //     // stream_callback,
-    //     // user_message_callback,
-    //     // machine_message_callback,
-    //     vec![
-    //         // stream_callback,
-    //         // stream_callback,
-    //         // user_message_callback,
-    //         // user_message_callback,
-    //         // user_message_callback,
-    //         machine_message_callback,
-    //         // machine_message_callback,
-    //     ],
     // )
-    // .await;
+    // .await
+    // .unwrap();
+    // for _ in 0..3 {
+    //     let msg = subscriber.receive_msg().await.unwrap();
+    //     println!(
+    //         "Stream Received message:- Start: {:?} Num: {:?}",
+    //         msg.start, msg.num
+    //     );
+    // }
+
+    // let subscriber = node::Subscriber::new(
+    //     args.key_expr.as_str(),
+    //     args.mode.as_str(),
+    //     UserMessage::default(),
+    //     args.endpoints.iter().map(|x| x.as_str()).collect(),
+    // )
+    // .await
+    // .unwrap();
+    // for _ in 0..3 {
+    //     let msg = subscriber.receive_msg().await.unwrap();
+    //     println!(
+    //         "UserMessage Received message:- Number: {} Value: {} Count: {} Bytes: {:?}",
+    //         msg.number, msg.value, msg.count, msg.bytes
+    //     );
+    // }
+
+    // let subscriber = node::Subscriber::new(
+    //     args.key_expr.as_str(),
+    //     args.mode.as_str(),
+    //     MachineMessage::default(),
+    //     args.endpoints.iter().map(|x| x.as_str()).collect(),
+    // )
+    // .await
+    // .unwrap();
+    // for _ in 0..3 {
+    //     let msg = subscriber.receive_msg().await.unwrap();
+    //     println!(
+    //         "MachineMessage Received message:- Message: {} Count: {}",
+    //         msg.message, msg.count
+    //     );
+    // }
+
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    node::start_subscriber(
+        args.key_expr.as_str(),
+        args.mode.as_str(),
+        args.endpoints.iter().map(|x| x.as_str()).collect(),
+        vec![
+            // generic_callback,
+            // generic_callback,
+            // stream_callback,
+            stream_callback,
+            // user_message_callback,
+            // user_message_callback,
+            // user_message_callback,
+            // machine_message_callback,
+            // machine_message_callback,
+        ],
+    )
+    .await;
 }

@@ -30,6 +30,9 @@ impl Message for Stream {
     async fn next(&mut self) -> Option<&mut Self> {
         self.num += 1;
         // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+        // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+        // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
         if self.num > 50_000 {
             None
         } else {

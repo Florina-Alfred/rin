@@ -94,7 +94,6 @@ pub async fn start_publisher(
             Some(_) => (),
             None => break,
         }
-        // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
     }
 }
 
@@ -113,7 +112,7 @@ impl<T> Subscriber<T> {
     pub async fn new(
         key_expr: &str,
         mode: &str,
-        default: T,
+        _default: T,
         endpoints: Vec<&str>,
     ) -> Result<Subscriber<T>, zenoh::Error>
     where
