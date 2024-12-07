@@ -6,20 +6,23 @@ use std::fmt::Debug;
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Stream {
     pub start: Option<u32>,
+    pub length: Option<u32>,
     pub num: u32,
 }
 
 impl Stream {
     #[allow(dead_code)]
-    pub fn new(start: Option<u32>) -> Self {
-        if let Some(start) = start {
+    pub fn new(start: Option<u32>, length: Option<u32>) -> Self {
+        if let (Some(start), Some(length)) = (start, length) {
             Stream {
                 start: Some(start),
+                length: Some(length),
                 num: start as u32,
             }
         } else {
             Stream {
-                start: None,
+                start: Some(0),
+                length: Some(10),
                 num: 0,
             }
         }
@@ -33,10 +36,10 @@ impl Message for Stream {
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
-        if self.num > 50_000 {
-            None
-        } else {
+        if (self.num - self.start.unwrap()) < self.length.unwrap() {
             Some(self)
+        } else {
+            None
         }
     }
 }

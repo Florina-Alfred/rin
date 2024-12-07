@@ -49,8 +49,8 @@ async fn main() {
     //     publisher.publish(pub_msg_struct.clone()).await;
     // }
 
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-    let pub_msg_struct = Stream::new(Some(args.start));
+    // tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+    let pub_msg_struct = Stream::new(Some(args.start), Some(5));
     node::start_publisher(
         args.key_expr.as_str(),
         pub_msg_struct.clone(),
