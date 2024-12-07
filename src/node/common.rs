@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use tokio;
 
 pub trait Message {
-    fn next(&mut self) -> Option<&mut Self>
+    async fn next(&mut self) -> Option<&mut Self>
     where
         Self: Sized;
     fn ser(&self) -> String
@@ -13,7 +13,7 @@ pub trait Message {
         let serialized = serde_json::to_string(&self).unwrap();
         return serialized;
     }
-    fn deser(&self, msg: String) -> Self
+    fn deser(&self, msg: &String) -> Self
     where
         Self: for<'de> Deserialize<'de> + Debug,
     {
@@ -26,4 +26,9 @@ pub fn logger(message: String) {
     tokio::spawn(async move {
         println!("{}", message);
     });
+}
+
+#[allow(dead_code)]
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>());
 }

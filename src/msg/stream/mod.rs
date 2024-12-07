@@ -27,9 +27,10 @@ impl Stream {
 }
 
 impl Message for Stream {
-    fn next(&mut self) -> Option<&mut Self> {
+    async fn next(&mut self) -> Option<&mut Self> {
         self.num += 1;
-        if self.num > 10 {
+        // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        if self.num > 50_000 {
             None
         } else {
             Some(self)
@@ -46,7 +47,7 @@ pub struct UserMessage {
 }
 
 impl Message for UserMessage {
-    fn next(&mut self) -> Option<&mut Self> {
+    async fn next(&mut self) -> Option<&mut Self> {
         self.number = (self.number.parse::<u32>().unwrap() + 1).to_string();
         self.value = format!("value {}", self.number);
         self.count += 1;
@@ -66,7 +67,7 @@ pub struct MachineMessage {
 }
 
 impl Message for MachineMessage {
-    fn next(&mut self) -> Option<&mut Self> {
+    async fn next(&mut self) -> Option<&mut Self> {
         self.message = format!("message {}", self.count);
         self.count += 1;
         Some(self)
