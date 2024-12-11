@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use tokio;
+use tracing::info;
 
 pub trait Message {
     async fn next(&mut self) -> Option<&mut Self>
@@ -25,6 +26,7 @@ pub trait Message {
 pub fn logger(message: String) {
     tokio::spawn(async move {
         println!("{}", message);
+        // info!(message);
     });
 }
 

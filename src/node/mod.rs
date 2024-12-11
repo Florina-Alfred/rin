@@ -6,6 +6,7 @@ use serde_json::json;
 use std::fmt::Debug;
 use zenoh::bytes::Encoding;
 // use zenoh::handlers::FifoChannelHandler;
+use tracing::info;
 use zenoh::Config;
 
 #[allow(dead_code)]
@@ -24,7 +25,7 @@ impl<'a> Publisher<'a> {
         attachment: Option<String>,
         endpoints: Vec<&'a str>,
     ) -> Result<Publisher<'a>, zenoh::Error> {
-        zenoh::init_log_from_env_or("error");
+        // zenoh::init_log_from_env_or("error");
 
         let mut config = Config::default();
         config
@@ -62,7 +63,7 @@ pub async fn start_publisher(
     mode: &str,
     endpoints: Vec<&str>,
 ) {
-    zenoh::init_log_from_env_or("error");
+    // zenoh::init_log_from_env_or("error");
 
     let mut config = Config::default();
     config
@@ -161,7 +162,7 @@ pub async fn start_subscriber<T>(
 ) where
     T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
-    zenoh::init_log_from_env_or("error");
+    // zenoh::init_log_from_env_or("error");
 
     let mut config = Config::default();
     config
@@ -200,6 +201,78 @@ pub async fn start_subscriber<T>(
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
             common::logger(format!(" ({})", att).to_string());
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub async fn start_subscriber_publisher<T, S>(
+    key_expr_sub: &str,
+    key_expr_pub: &str,
+    mode: &str,
+    mut stream: impl Message + Debug + Serialize,
+    endpoints: Vec<&str>,
+    maniputater: fn(T) -> S,
+) where
+    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    S: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+{
+    // zenoh::init_log_from_env_or("error");
+
+    let mut config = Config::default();
+    config
+        .insert_json5("mode", &json!(mode).to_string())
+        .unwrap();
+    let _ = config.insert_json5("connect/endpoints", &json!(endpoints).to_string());
+
+    common::logger("Opening session...".to_string());
+    let session = zenoh::open(config).await.unwrap();
+
+    common::logger(format!("Declaring Subscriber on '{}'...", &key_expr_sub).to_string());
+    let subscriber = session.declare_subscriber(key_expr_sub).await.unwrap();
+    let publisher = session.declare_publisher(key_expr_pub).await.unwrap();
+
+    while let Ok(sample) = subscriber.recv_async().await {
+        let msg = T::default();
+        let payload = sample
+            .payload()
+            .try_to_string()
+            .unwrap_or_else(|e| e.to_string().into());
+
+        common::logger(
+            format!(
+                ">> [Subscriber] Received {} ('{}': '{}')\n",
+                sample.kind(),
+                sample.key_expr().as_str(),
+                payload
+            )
+            .to_string(),
+        );
+
+        let value = payload.clone().to_string();
+        let mut manipulated_message = maniputater(msg.deser(&value));
+        // println!("Manipulated message: {:?}", manipulated_message);
+
+        if let Some(att) = sample.attachment() {
+            let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
+            common::logger(format!(" ({})", att).to_string());
+        }
+
+        loop {
+            let buf = manipulated_message.ser();
+            common::logger(format!(
+                "<< [Publisher] Serialized data ('{}': '{:?}')...",
+                &key_expr_pub, buf
+            ));
+            publisher
+                .put(buf)
+                .encoding(Encoding::TEXT_PLAIN)
+                .await
+                .unwrap();
+            match manipulated_message.next().await {
+                Some(_) => (),
+                None => break,
+            }
         }
     }
 }

@@ -58,7 +58,7 @@ impl Message for UserMessage {
         self.value = format!("value {}", self.number);
         self.count += 1;
         self.bytes = self.bytes.iter().map(|x| x + 1).collect();
-        if self.count > 10 {
+        if self.count > 20 {
             None
         } else {
             Some(self)

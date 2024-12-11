@@ -7,10 +7,21 @@ use clap::Parser;
 #[allow(unused_imports)]
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use tokio;
+use tracing::info;
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
+
+    let subscriber = tracing_subscriber::fmt()
+        .compact()
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .with_target(false)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).unwrap();
 
     // let publisher = node::Publisher::new(
     //     args.key_expr.as_str(),
@@ -50,7 +61,8 @@ async fn main() {
     // }
 
     // tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-    let pub_msg_struct = Stream::new(Some(args.start), Some(5));
+    let pub_msg_struct = Stream::new(Some(args.start), Some(3));
+    info!(?pub_msg_struct, "Starting publisher");
     node::start_publisher(
         args.key_expr.as_str(),
         pub_msg_struct.clone(),
@@ -59,4 +71,5 @@ async fn main() {
         args.endpoints.iter().map(|x| x.as_str()).collect(),
     )
     .await;
+    info!("Publisher ended");
 }
