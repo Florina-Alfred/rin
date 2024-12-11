@@ -64,7 +64,7 @@ async fn main() {
     let pub_msg_struct = Stream::new(Some(args.start), Some(3));
     info!(?pub_msg_struct, "Starting publisher");
     node::start_publisher(
-        args.key_expr.as_str(),
+        args.input_key_expr.as_str(),
         pub_msg_struct.clone(),
         None,
         args.mode.as_str(),

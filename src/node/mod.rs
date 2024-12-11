@@ -210,7 +210,6 @@ pub async fn start_subscriber_publisher<T, S>(
     key_expr_sub: &str,
     key_expr_pub: &str,
     mode: &str,
-    mut stream: impl Message + Debug + Serialize,
     endpoints: Vec<&str>,
     maniputater: fn(T) -> S,
 ) where
@@ -250,29 +249,22 @@ pub async fn start_subscriber_publisher<T, S>(
         );
 
         let value = payload.clone().to_string();
-        let mut manipulated_message = maniputater(msg.deser(&value));
-        // println!("Manipulated message: {:?}", manipulated_message);
+        let manipulated_message = maniputater(msg.deser(&value));
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
             common::logger(format!(" ({})", att).to_string());
         }
 
-        loop {
-            let buf = manipulated_message.ser();
-            common::logger(format!(
-                "<< [Publisher] Serialized data ('{}': '{:?}')...",
-                &key_expr_pub, buf
-            ));
-            publisher
-                .put(buf)
-                .encoding(Encoding::TEXT_PLAIN)
-                .await
-                .unwrap();
-            match manipulated_message.next().await {
-                Some(_) => (),
-                None => break,
-            }
-        }
+        let buf = manipulated_message.ser();
+        common::logger(format!(
+            "<< [Publisher] Serialized data ('{}': '{:?}')...",
+            &key_expr_pub, buf
+        ));
+        publisher
+            .put(buf)
+            .encoding(Encoding::TEXT_PLAIN)
+            .await
+            .unwrap();
     }
 }

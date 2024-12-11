@@ -7,7 +7,10 @@ pub struct Args {
     pub start: u32,
 
     #[arg(short, long, default_value = "demo/example/zenoh-rs-pub")]
-    pub key_expr: String,
+    pub input_key_expr: String,
+
+    #[arg(short, long, default_value = "demo/example/zenoh-rs-sub")]
+    pub output_key_expr: String,
 
     #[arg(short, long, default_value = "client")]
     pub mode: String,

@@ -25,8 +25,8 @@ pub trait Message {
 
 pub fn logger(message: String) {
     tokio::spawn(async move {
-        println!("{}", message);
-        // info!(message);
+        // println!("{}", message);
+        info!(message);
     });
 }
 

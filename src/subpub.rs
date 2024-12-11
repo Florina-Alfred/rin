@@ -56,13 +56,22 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
 async fn main() {
     let args = Args::parse();
 
+    let subscriber = tracing_subscriber::fmt()
+        .compact()
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .with_target(false)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).unwrap();
+
     // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     info!("Starting subscriber");
     node::start_subscriber_publisher(
-        "test_topic_1",
-        "test_topic_2",
+        args.output_key_expr.as_str(),
+        args.input_key_expr.as_str(),
         args.mode.as_str(),
-        UserMessage::default(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),
         stream_modifier,
     )
