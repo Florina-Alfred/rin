@@ -8,7 +8,7 @@ use clap::Parser;
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use node::common;
 use tokio;
-use tracing::info;
+// use tracing::info;
 
 #[tokio::main]
 async fn main() {
