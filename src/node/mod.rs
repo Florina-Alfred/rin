@@ -119,7 +119,7 @@ impl<T> Subscriber<T> {
     where
         T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
     {
-        zenoh::init_log_from_env_or("error");
+        // zenoh::init_log_from_env_or("error");
 
         let mut config = Config::default();
         config
@@ -253,7 +253,7 @@ pub async fn start_subscriber_publisher<T, S>(
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
-            common::logger(format!(" ({})", att).to_string());
+            common::logger(format!("({})", att).to_string());
         }
 
         let buf = manipulated_message.ser();

@@ -66,7 +66,6 @@ async fn main() {
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     info!("Starting subscriber");
     node::start_subscriber_publisher(
         args.output_key_expr.as_str(),
