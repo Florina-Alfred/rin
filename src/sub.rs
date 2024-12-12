@@ -54,81 +54,61 @@ async fn main() {
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    // let subscriber = tracing_subscriber::fmt()
-    //     .compact()
-    //     .with_file(true)
-    //     .with_line_number(true)
-    //     .with_thread_ids(false)
-    //     .with_thread_names(false)
-    //     .with_target(false)
-    //     .finish();
-    // tracing::subscriber::set_global_default(subscriber).unwrap();
+    let subscriber = tracing_subscriber::fmt()
+        .compact()
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .with_target(false)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    // let subscriber = node::Subscriber::new(
-    //     args.key_expr.as_str(),
-    //     args.mode.as_str(),
-    //     Stream::default(),
-    //     args.endpoints.iter().map(|x| x.as_str()).collect(),
-    // )
-    // .await
-    // .unwrap();
-    // for _ in 0..3 {
-    //     let msg = subscriber.receive_msg().await.unwrap();
-    //     println!(
-    //         "Stream Received message:- Start: {:?} Num: {:?}",
-    //         msg.start, msg.num
-    //     );
-    // }
-
-    // let subscriber = node::Subscriber::new(
-    //     args.key_expr.as_str(),
-    //     args.mode.as_str(),
-    //     UserMessage::default(),
-    //     args.endpoints.iter().map(|x| x.as_str()).collect(),
-    // )
-    // .await
-    // .unwrap();
-    // for _ in 0..3 {
-    //     let msg = subscriber.receive_msg().await.unwrap();
-    //     println!(
-    //         "UserMessage Received message:- Number: {} Value: {} Count: {} Bytes: {:?}",
-    //         msg.number, msg.value, msg.count, msg.bytes
-    //     );
-    // }
-
-    // let subscriber = node::Subscriber::new(
-    //     args.key_expr.as_str(),
-    //     args.mode.as_str(),
-    //     MachineMessage::default(),
-    //     args.endpoints.iter().map(|x| x.as_str()).collect(),
-    // )
-    // .await
-    // .unwrap();
-    // for _ in 0..3 {
-    //     let msg = subscriber.receive_msg().await.unwrap();
-    //     println!(
-    //         "MachineMessage Received message:- Message: {} Count: {}",
-    //         msg.message, msg.count
-    //     );
-    // }
-
-    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    info!("Starting subscriber");
-    node::start_subscriber(
+    let subscriber = node::Subscriber::new(
         args.output_key_expr.as_str(),
         args.mode.as_str(),
+        Stream::default(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),
-        vec![
-            // generic_callback,
-            // generic_callback,
-            // stream_callback,
-            // stream_callback,
-            user_message_callback,
-            // user_message_callback,
-            // user_message_callback,
-            // machine_message_callback,
-            // machine_message_callback,
-        ],
     )
-    .await;
+    .await
+    .unwrap();
+    for _ in 0..3 {
+        let msg = subscriber.receive_msg().await.unwrap();
+        println!(
+            "Stream Received message:- Start: {:?} Num: {:?}",
+            msg.start, msg.num
+        );
+    }
+
+    let subscriber = node::Subscriber::new(
+        args.output_key_expr.as_str(),
+        args.mode.as_str(),
+        UserMessage::default(),
+        args.endpoints.iter().map(|x| x.as_str()).collect(),
+    )
+    .await
+    .unwrap();
+    for _ in 0..3 {
+        let msg = subscriber.receive_msg().await.unwrap();
+        println!(
+            "UserMessage Received message:- Number: {} Value: {} Count: {} Bytes: {:?}",
+            msg.number, msg.value, msg.count, msg.bytes
+        );
+    }
+
+    let subscriber = node::Subscriber::new(
+        args.output_key_expr.as_str(),
+        args.mode.as_str(),
+        MachineMessage::default(),
+        args.endpoints.iter().map(|x| x.as_str()).collect(),
+    )
+    .await
+    .unwrap();
+    for _ in 0..3 {
+        let msg = subscriber.receive_msg().await.unwrap();
+        println!(
+            "MachineMessage Received message:- Message: {} Count: {}",
+            msg.message, msg.count
+        );
+    }
 }

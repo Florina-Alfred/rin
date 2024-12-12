@@ -23,53 +23,40 @@ async fn main() {
         .finish();
     tracing::subscriber::set_global_default(subscriber).unwrap();
 
-    // let publisher = node::Publisher::new(
-    //     args.key_expr.as_str(),
-    //     args.mode.as_str(),
-    //     None,
-    //     args.endpoints.iter().map(|x| x.as_str()).collect(),
-    // )
-    // .await
-    // .unwrap();
-
-    // let pub_msg_struct = Stream::new(Some(args.start));
-    // println!("-------Current Message: {:?}", pub_msg_struct);
-    // for _ in 0..3 {
-    //     publisher.publish(pub_msg_struct.clone()).await;
-    // }
-
-    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    // let pub_msg_struct = UserMessage {
-    //     number: "1".to_string(),
-    //     value: "value".to_string(),
-    //     count: 0,
-    //     bytes: vec![0, 1, 2, 3, 4],
-    // };
-    // println!("-------Current Message: {:?}", pub_msg_struct);
-    // for _ in 0..3 {
-    //     publisher.publish(pub_msg_struct.clone()).await;
-    // }
-
-    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    // let pub_msg_struct = MachineMessage {
-    //     message: "message".to_string(),
-    //     count: 0,
-    // };
-    // println!("-------Current Message: {:?}", pub_msg_struct);
-    // for _ in 0..3 {
-    //     publisher.publish(pub_msg_struct.clone()).await;
-    // }
-
-    // tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-    let pub_msg_struct = Stream::new(Some(args.start), Some(3));
-    info!(?pub_msg_struct, "Starting publisher");
-    node::start_publisher(
+    let publisher = node::Publisher::new(
         args.input_key_expr.as_str(),
-        pub_msg_struct.clone(),
-        None,
         args.mode.as_str(),
+        None,
         args.endpoints.iter().map(|x| x.as_str()).collect(),
     )
-    .await;
-    info!("Publisher ended");
+    .await
+    .unwrap();
+
+    let pub_msg_struct = Stream::new(Some(args.start), Some(0));
+    println!("-------Current Message: {:?}", pub_msg_struct);
+    for _ in 0..3 {
+        publisher.publish(pub_msg_struct.clone()).await;
+    }
+
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let pub_msg_struct = UserMessage {
+        number: "1".to_string(),
+        value: "value".to_string(),
+        count: 0,
+        bytes: vec![0, 1, 2, 3, 4],
+    };
+    println!("-------Current Message: {:?}", pub_msg_struct);
+    for _ in 0..3 {
+        publisher.publish(pub_msg_struct.clone()).await;
+    }
+
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let pub_msg_struct = MachineMessage {
+        message: "message".to_string(),
+        count: 0,
+    };
+    println!("-------Current Message: {:?}", pub_msg_struct);
+    for _ in 0..3 {
+        publisher.publish(pub_msg_struct.clone()).await;
+    }
 }

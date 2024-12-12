@@ -4,15 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "pub"
+name = "sp"
+path = "src/start_pub.rs"
+
+[[bin]]
+name = "ssp"
+path = "src/start_subpub.rs"
+
+[[bin]]
+name = "ss"
+path = "src/start_sub.rs"
+
+[[bin]]
+name = "p"
 path = "src/pub.rs"
 
 [[bin]]
-name = "subpub"
-path = "src/subpub.rs"
-
-[[bin]]
-name = "sub"
+name = "s"
 path = "src/sub.rs"
 
 [[bin]]
