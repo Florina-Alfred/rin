@@ -56,17 +56,7 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
 async fn main() {
     let args = Args::parse();
 
-    let subscriber = tracing_subscriber::fmt()
-        .compact()
-        .with_file(true)
-        .with_line_number(true)
-        .with_thread_ids(false)
-        .with_thread_names(false)
-        .with_target(false)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber).unwrap();
-
-    info!("Starting subscriber");
+    // info!("Starting subscriber");
     node::start_subscriber_publisher(
         args.output_key_expr.as_str(),
         args.input_key_expr.as_str(),

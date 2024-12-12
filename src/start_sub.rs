@@ -44,17 +44,6 @@ fn machine_message_callback(input: MachineMessage) {
 async fn main() {
     let args = Args::parse();
 
-    let subscriber = tracing_subscriber::fmt()
-        .compact()
-        .with_file(true)
-        .with_line_number(true)
-        .with_thread_ids(false)
-        .with_thread_names(false)
-        .with_target(false)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber).unwrap();
-
-    info!("Starting subscriber");
     node::start_subscriber(
         args.output_key_expr.as_str(),
         args.mode.as_str(),
@@ -63,8 +52,8 @@ async fn main() {
             // generic_callback,
             // generic_callback,
             // stream_callback,
-            // stream_callback,
-            user_message_callback,
+            stream_callback,
+            // user_message_callback,
             // user_message_callback,
             // user_message_callback,
             // machine_message_callback,

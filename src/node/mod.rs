@@ -6,7 +6,7 @@ use serde_json::json;
 use std::fmt::Debug;
 use zenoh::bytes::Encoding;
 // use zenoh::handlers::FifoChannelHandler;
-use tracing::info;
+use tracing::{debug, info};
 use zenoh::Config;
 
 #[allow(dead_code)]
@@ -19,6 +19,7 @@ pub struct Publisher<'a> {
 
 #[allow(dead_code)]
 impl<'a> Publisher<'a> {
+    #[tracing::instrument]
     pub async fn new(
         key_expr: &'a str,
         mode: &'a str,
@@ -43,6 +44,7 @@ impl<'a> Publisher<'a> {
             publisher,
         })
     }
+    #[tracing::instrument]
     pub async fn publish(&self, message: impl Message + Debug + Serialize) {
         common::logger(format!("Publishing message: {:?}", message).to_string());
         let buf = message.ser();
@@ -56,6 +58,7 @@ impl<'a> Publisher<'a> {
 }
 
 #[allow(dead_code)]
+#[tracing::instrument]
 pub async fn start_publisher(
     key_expr: &str,
     mut stream: impl Message + Debug + Serialize,
@@ -110,6 +113,7 @@ pub struct Subscriber<T> {
 
 #[allow(dead_code)]
 impl<T> Subscriber<T> {
+    #[tracing::instrument]
     pub async fn new(
         key_expr: &str,
         mode: &str,
@@ -137,6 +141,7 @@ impl<T> Subscriber<T> {
             subscriber,
         })
     }
+    #[tracing::instrument]
     pub async fn receive_msg(&self) -> Result<T, zenoh::Error>
     where
         T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
@@ -154,6 +159,7 @@ impl<T> Subscriber<T> {
 }
 
 #[allow(dead_code)]
+#[tracing::instrument]
 pub async fn start_subscriber<T>(
     key_expr: &str,
     mode: &str,
@@ -206,6 +212,7 @@ pub async fn start_subscriber<T>(
 }
 
 #[allow(dead_code)]
+#[tracing::instrument]
 pub async fn start_subscriber_publisher<T, S>(
     key_expr_sub: &str,
     key_expr_pub: &str,
