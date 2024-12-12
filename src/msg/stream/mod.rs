@@ -12,6 +12,7 @@ pub struct Stream {
 
 impl Stream {
     #[allow(dead_code)]
+    // #[tracing::instrument]
     pub fn new(start: Option<u32>, length: Option<u32>) -> Self {
         if let (Some(start), Some(length)) = (start, length) {
             Stream {
@@ -30,6 +31,7 @@ impl Stream {
 }
 
 impl Message for Stream {
+    #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.num += 1;
         // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -37,6 +39,10 @@ impl Message for Stream {
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
         if (self.num - self.start.unwrap()) < self.length.unwrap() {
+            tracing::info!(
+                monotonic_counter.stream = self.num,
+                "updating the Stream value",
+            );
             Some(self)
         } else {
             None
@@ -53,6 +59,7 @@ pub struct UserMessage {
 }
 
 impl Message for UserMessage {
+    #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.number = (self.number.parse::<u32>().unwrap() + 1).to_string();
         self.value = format!("value {}", self.number);
@@ -73,6 +80,7 @@ pub struct MachineMessage {
 }
 
 impl Message for MachineMessage {
+    #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.message = format!("message {}", self.count);
         self.count += 1;

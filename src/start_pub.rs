@@ -6,12 +6,14 @@ use args::Args;
 use clap::Parser;
 #[allow(unused_imports)]
 use msg::stream::{MachineMessage, Stream, UserMessage};
+use node::common;
 use tokio;
 use tracing::info;
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
+    let _guard = common::init_tracing_subscriber();
 
     let pub_msg_struct = Stream::new(Some(args.start), Some(5));
     // info!(?pub_msg_struct, "Starting publisher");

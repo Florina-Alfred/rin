@@ -37,6 +37,7 @@ pub trait Message {
     }
 }
 
+#[tracing::instrument]
 pub fn logger(message: String) {
     tokio::spawn(async move {
         println!("{}", message);
@@ -68,19 +69,20 @@ fn init_meter_provider() -> SdkMeterProvider {
         .unwrap();
 
     let reader = PeriodicReader::builder(exporter, runtime::Tokio)
-        .with_interval(std::time::Duration::from_secs(30))
+        // .with_interval(std::time::Duration::from_secs(1))
+        .with_interval(std::time::Duration::from_millis(1))
         .build();
 
-    let stdout_reader = PeriodicReader::builder(
-        opentelemetry_stdout::MetricExporter::default(),
-        runtime::Tokio,
-    )
-    .build();
+    // let stdout_reader = PeriodicReader::builder(
+    //     opentelemetry_stdout::MetricExporter::default(),
+    //     runtime::Tokio,
+    // )
+    // .build();
 
     let meter_provider = MeterProviderBuilder::default()
         .with_resource(resource())
         .with_reader(reader)
-        .with_reader(stdout_reader)
+        // .with_reader(stdout_reader)
         .build();
 
     global::set_meter_provider(meter_provider.clone());
@@ -95,12 +97,12 @@ fn init_tracer_provider() -> TracerProvider {
         .unwrap();
 
     TracerProvider::builder()
-        // .with_resource(resource())
+        .with_resource(resource())
         .with_batch_exporter(exporter, runtime::Tokio)
         .build()
 }
 
-fn init_tracing_subscriber() -> OtelGuard {
+pub fn init_tracing_subscriber() -> OtelGuard {
     let tracer_provider = init_tracer_provider();
     let meter_provider = init_meter_provider();
 
@@ -121,7 +123,7 @@ fn init_tracing_subscriber() -> OtelGuard {
     }
 }
 
-struct OtelGuard {
+pub struct OtelGuard {
     tracer_provider: TracerProvider,
     meter_provider: SdkMeterProvider,
 }

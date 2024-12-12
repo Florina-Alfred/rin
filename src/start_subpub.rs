@@ -5,10 +5,11 @@ mod node;
 use args::Args;
 use clap::Parser;
 use msg::stream::{MachineMessage, Stream, UserMessage};
+use node::common;
 use tokio;
-use tracing::info;
 
 #[allow(dead_code)]
+#[tracing::instrument]
 fn stream_modifier(input: Stream) -> UserMessage {
     // println!(
     // "Stream callback:- Start: {:?} Num: {:?}",
@@ -26,6 +27,7 @@ fn stream_modifier(input: Stream) -> UserMessage {
 }
 
 #[allow(dead_code)]
+#[tracing::instrument]
 fn user_message_modifier(input: UserMessage) -> MachineMessage {
     println!("User message callback");
     println!("Number: {}", input.number);
@@ -40,6 +42,7 @@ fn user_message_modifier(input: UserMessage) -> MachineMessage {
 }
 
 #[allow(dead_code)]
+#[tracing::instrument]
 fn machine_message_modifier(input: MachineMessage) -> Stream {
     println!("Machine message callback");
     println!("Message: {}", input.message);
@@ -55,6 +58,7 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
+    let _guard = common::init_tracing_subscriber();
 
     // info!("Starting subscriber");
     node::start_subscriber_publisher(

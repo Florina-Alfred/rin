@@ -19,7 +19,7 @@ pub struct Publisher<'a> {
 
 #[allow(dead_code)]
 impl<'a> Publisher<'a> {
-    #[tracing::instrument]
+    // #[tracing::instrument]
     pub async fn new(
         key_expr: &'a str,
         mode: &'a str,
@@ -113,7 +113,7 @@ pub struct Subscriber<T> {
 
 #[allow(dead_code)]
 impl<T> Subscriber<T> {
-    #[tracing::instrument]
+    // #[tracing::instrument]
     pub async fn new(
         key_expr: &str,
         mode: &str,
