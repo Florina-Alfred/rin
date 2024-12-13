@@ -60,8 +60,9 @@ impl<'a> Publisher<'a> {
 #[allow(dead_code)]
 #[tracing::instrument]
 pub async fn start_publisher(
+    name: &str,
     key_expr: &str,
-    mut stream: impl Message + Debug + Serialize,
+    mut payload: impl Message + Debug + Serialize,
     attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -74,27 +75,28 @@ pub async fn start_publisher(
         .unwrap();
     let _ = config.insert_json5("connect/endpoints", &json!(endpoints).to_string());
 
-    common::logger("Opening session...".to_string());
+    common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
 
-    common::logger(format!("Declaring Publisher on '{}'...", &key_expr).to_string());
+    common::logger(format!("Declaring {} Publisher on '{}'...", &name, &key_expr).to_string());
     let publisher = session.declare_publisher(key_expr).await.unwrap();
 
-    common::logger(format!("Sending data: {:?}", stream).to_string());
+    common::logger(format!("{} ending data: {:?}", &name, &payload).to_string());
 
     loop {
-        let buf = stream.ser();
+        let buf = payload.ser();
         common::logger(format!(
-            "<< [Publisher] Serialized data ('{}': '{:?}')...",
-            &key_expr, buf
+            "<< [{:>16}] Serialized data ('{}': '{:?}')...",
+            &name, &key_expr, &buf
         ));
+        let buf = common::spanned_message(buf);
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
             .attachment(attachment.clone())
             .await
             .unwrap();
-        match stream.next().await {
+        match payload.next().await {
             Some(_) => (),
             None => break,
         }
@@ -161,6 +163,7 @@ impl<T> Subscriber<T> {
 #[allow(dead_code)]
 #[tracing::instrument]
 pub async fn start_subscriber<T>(
+    name: &str,
     key_expr: &str,
     mode: &str,
     endpoints: Vec<&str>,
@@ -176,10 +179,10 @@ pub async fn start_subscriber<T>(
         .unwrap();
     let _ = config.insert_json5("connect/endpoints", &json!(endpoints).to_string());
 
-    common::logger("Opening session...".to_string());
+    common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
 
-    common::logger(format!("Declaring Subscriber on '{}'...", &key_expr).to_string());
+    common::logger(format!("Declaring {} Subscriber on '{}'...", &name, &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
 
     while let Ok(sample) = subscriber.recv_async().await {
@@ -188,10 +191,12 @@ pub async fn start_subscriber<T>(
             .payload()
             .try_to_string()
             .unwrap_or_else(|e| e.to_string().into());
+        let (payload, span) = common::unspanned_message(payload.to_string()).unwrap();
 
         common::logger(
             format!(
-                ">> [Subscriber] Received {} ('{}': '{}')\n",
+                ">> [{:>16}] Received {} ('{}': '{}')\n",
+                &name,
                 sample.kind(),
                 sample.key_expr().as_str(),
                 payload
@@ -214,6 +219,7 @@ pub async fn start_subscriber<T>(
 #[allow(dead_code)]
 #[tracing::instrument]
 pub async fn start_subscriber_publisher<T, S>(
+    name: &str,
     key_expr_sub: &str,
     key_expr_pub: &str,
     mode: &str,
@@ -231,10 +237,16 @@ pub async fn start_subscriber_publisher<T, S>(
         .unwrap();
     let _ = config.insert_json5("connect/endpoints", &json!(endpoints).to_string());
 
-    common::logger("Opening session...".to_string());
+    common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
 
-    common::logger(format!("Declaring Subscriber on '{}'...", &key_expr_sub).to_string());
+    common::logger(
+        format!(
+            "Declaring {} Subscriber-Publisher on '{}'...",
+            &name, &key_expr_sub
+        )
+        .to_string(),
+    );
     let subscriber = session.declare_subscriber(key_expr_sub).await.unwrap();
     let publisher = session.declare_publisher(key_expr_pub).await.unwrap();
 
@@ -247,7 +259,8 @@ pub async fn start_subscriber_publisher<T, S>(
 
         common::logger(
             format!(
-                ">> [Subscriber] Received {} ('{}': '{}')\n",
+                ">> [{:>16}] Received {} ('{}': '{}')\n",
+                &name,
                 sample.kind(),
                 sample.key_expr().as_str(),
                 payload
@@ -265,8 +278,8 @@ pub async fn start_subscriber_publisher<T, S>(
 
         let buf = manipulated_message.ser();
         common::logger(format!(
-            "<< [Publisher] Serialized data ('{}': '{:?}')...",
-            &key_expr_pub, buf
+            "<< [{:>16}] Serialized data ('{}': '{:?}')...",
+            &name, &key_expr_pub, buf
         ));
         publisher
             .put(buf)

@@ -50,6 +50,7 @@ async fn main() {
     let _guard = common::init_tracing_subscriber();
 
     node::start_subscriber(
+        "test_subscriber",
         args.output_key_expr.as_str(),
         args.mode.as_str(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),

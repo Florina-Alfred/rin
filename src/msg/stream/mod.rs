@@ -1,3 +1,4 @@
+use crate::node::common::PropagationContext;
 use serde::{Deserialize, Serialize};
 // use serde_json;
 use crate::node::common::Message;
@@ -73,10 +74,25 @@ impl Message for UserMessage {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,
+    span: PropagationContext,
+}
+
+impl Default for MachineMessage {
+    #[tracing::instrument]
+    fn default() -> Self {
+        let parent_context = tracing::Span::current().context();
+        let propagation_context = PropagationContext::inject(&parent_context);
+        MachineMessage {
+            message: "message 0".to_string(),
+            count: 0,
+            span: propagation_context,
+        }
+    }
 }
 
 impl Message for MachineMessage {
@@ -84,6 +100,10 @@ impl Message for MachineMessage {
     async fn next(&mut self) -> Option<&mut Self> {
         self.message = format!("message {}", self.count);
         self.count += 1;
-        Some(self)
+        if self.count > 2 {
+            None
+        } else {
+            Some(self)
+        }
     }
 }

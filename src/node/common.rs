@@ -138,3 +138,68 @@ impl Drop for OtelGuard {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct SpannedMessage {
+    message: String,
+    span: PropagationContext,
+}
+
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+pub fn spanned_message(message: String) -> String {
+    let parent_context = tracing::Span::current().context();
+    let propagation_context = PropagationContext::inject(&parent_context);
+    let new_message = SpannedMessage {
+        message,
+        span: propagation_context,
+    };
+    let serialized = serde_json::to_string(&new_message).unwrap();
+    return serialized;
+}
+pub fn unspanned_message(
+    message: String,
+) -> Result<(String, PropagationContext), serde_json::Error> {
+    let serialized: SpannedMessage = serde_json::from_str(&message).unwrap();
+    Ok((serialized.message, serialized.span))
+}
+
+use opentelemetry::propagation::{Extractor, Injector};
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PropagationContext(HashMap<String, String>);
+
+impl PropagationContext {
+    fn empty() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn inject(context: &opentelemetry::Context) -> Self {
+        global::get_text_map_propagator(|propagator| {
+            let mut propagation_context = PropagationContext::empty();
+            propagator.inject_context(context, &mut propagation_context);
+            propagation_context
+        })
+    }
+
+    pub fn extract(&self) -> opentelemetry::Context {
+        global::get_text_map_propagator(|propagator| propagator.extract(self))
+    }
+}
+
+impl Injector for PropagationContext {
+    fn set(&mut self, key: &str, value: String) {
+        self.0.insert(key.to_owned(), value);
+    }
+}
+
+impl Extractor for PropagationContext {
+    fn get(&self, key: &str) -> Option<&str> {
+        let key = key.to_owned();
+        self.0.get(&key).map(|v| v.as_ref())
+    }
+
+    fn keys(&self) -> Vec<&str> {
+        self.0.keys().map(|k| k.as_ref()).collect()
+    }
+}

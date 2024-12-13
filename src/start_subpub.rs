@@ -62,6 +62,7 @@ async fn main() {
 
     // info!("Starting subscriber");
     node::start_subscriber_publisher(
+        "test_subscriber_publisher",
         args.output_key_expr.as_str(),
         args.input_key_expr.as_str(),
         args.mode.as_str(),
