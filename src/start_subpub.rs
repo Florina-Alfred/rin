@@ -6,7 +6,9 @@ use args::Args;
 use clap::Parser;
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use node::common;
+use node::common::PropagationContext;
 use tokio;
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[allow(dead_code)]
 #[tracing::instrument]
@@ -35,9 +37,13 @@ fn user_message_modifier(input: UserMessage) -> MachineMessage {
     println!("Count: {}", input.count);
     println!("Bytes: {:?}", input.bytes);
     println!();
+    let parent_context = tracing::Span::none().context();
+    let propagation_context = PropagationContext::inject(&parent_context);
+
     MachineMessage {
         message: format!("message {}", input.number),
         count: input.count,
+        span: propagation_context,
     }
 }
 

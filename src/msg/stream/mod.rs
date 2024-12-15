@@ -74,19 +74,29 @@ impl Message for UserMessage {
     }
 }
 
+// use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
+// use opentelemetry_sdk::propagation::TraceContextPropagator;
+// use std::collections::HashMap;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,
-    span: PropagationContext,
+    pub span: PropagationContext,
+    // span: HashMap<String, String>,
+    // span: tracing::Span,
 }
 
 impl Default for MachineMessage {
-    #[tracing::instrument]
+    // #[tracing::instrument]
     fn default() -> Self {
-        let parent_context = tracing::Span::current().context();
+        // let parent_context = tracing::Span::current().context();
+        let parent_context = tracing::Span::none().context();
         let propagation_context = PropagationContext::inject(&parent_context);
+        // let mut carrier = HashMap::new();
+        // let propagator = TraceContextPropagator::new();
+        // let parent_context = propagator.extract(&carrier);
+        // println!("Parent context: {:?}", parent_context);
         MachineMessage {
             message: "message 0".to_string(),
             count: 0,
@@ -98,12 +108,15 @@ impl Default for MachineMessage {
 impl Message for MachineMessage {
     #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
-        self.message = format!("message {}", self.count);
         self.count += 1;
-        if self.count > 2 {
+        self.message = format!("message {}", self.count);
+        let span = tracing::Span::current();
+        println!("Span: ------------------>{:?}", span);
+        if self.count > 0 {
             None
         } else {
             Some(self)
         }
+        // Some(self)
     }
 }

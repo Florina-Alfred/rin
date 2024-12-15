@@ -7,6 +7,7 @@ use clap::Parser;
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use node::common;
 use tokio;
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[allow(dead_code)]
 #[tracing::instrument]
@@ -35,12 +36,17 @@ fn user_message_callback(input: UserMessage) {
     println!();
 }
 
-#[allow(dead_code)]
-#[tracing::instrument]
+// #[allow(dead_code)]
+// #[tracing::instrument]
 fn machine_message_callback(input: MachineMessage) {
-    println!("Machine message callback");
-    println!("Message: {}", input.message);
-    println!("Count: {}", input.count);
+    let parent_context = input.span.extract();
+    let span = tracing::Span::current();
+    span.set_parent(parent_context);
+    println!("Span: {:?}", span);
+    tracing::debug_span!("Machine message callback");
+    tracing::debug_span!("Message: {}", input.message);
+    tracing::debug_span!("Count: {}", input.count);
+    // tracing::debug_span!("Span: {:?}", input.span);
     println!();
 }
 
@@ -58,11 +64,11 @@ async fn main() {
             // generic_callback,
             // generic_callback,
             // stream_callback,
-            stream_callback,
+            // stream_callback,
             // user_message_callback,
             // user_message_callback,
             // user_message_callback,
-            // machine_message_callback,
+            machine_message_callback,
             // machine_message_callback,
         ],
     )

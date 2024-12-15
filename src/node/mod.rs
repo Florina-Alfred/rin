@@ -7,6 +7,7 @@ use std::fmt::Debug;
 use zenoh::bytes::Encoding;
 // use zenoh::handlers::FifoChannelHandler;
 use tracing::{debug, info};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 use zenoh::Config;
 
 #[allow(dead_code)]
@@ -89,7 +90,7 @@ pub async fn start_publisher(
             "<< [{:>16}] Serialized data ('{}': '{:?}')...",
             &name, &key_expr, &buf
         ));
-        let buf = common::spanned_message(buf);
+        // let buf = common::spanned_message(buf);
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
@@ -161,7 +162,7 @@ impl<T> Subscriber<T> {
 }
 
 #[allow(dead_code)]
-#[tracing::instrument]
+// #[tracing::instrument]
 pub async fn start_subscriber<T>(
     name: &str,
     key_expr: &str,
@@ -191,7 +192,9 @@ pub async fn start_subscriber<T>(
             .payload()
             .try_to_string()
             .unwrap_or_else(|e| e.to_string().into());
-        let (payload, span) = common::unspanned_message(payload.to_string()).unwrap();
+        // let (payload, span) = common::unspanned_message(payload.to_string()).unwrap();
+        // let current_span = tracing::Span::none();
+        // current_span.set_parent(span.extract());
 
         common::logger(
             format!(
@@ -204,16 +207,38 @@ pub async fn start_subscriber<T>(
             .to_string(),
         );
 
-        let value = payload.clone().to_string();
+        let value = payload.to_string();
         for f in &callback {
+            // current_span.in_scope(|| f(msg.deser(&value)));
             f(msg.deser(&value));
         }
+        // loop_callbacks(msg, payload.to_string(), callback.clone());
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
             common::logger(format!(" ({})", att).to_string());
         }
+        break;
     }
+}
+
+#[tracing::instrument]
+fn loop_callbacks<T>(msg: T, payload: String, callback: Vec<fn(T)>)
+where
+    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+{
+    for f in &callback {
+        callback_caller(*f, msg.clone(), payload.clone());
+    }
+}
+
+#[tracing::instrument]
+fn callback_caller<T>(callback: fn(T), msg: T, payload: String)
+where
+    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+{
+    let value = payload.to_string();
+    callback(msg.deser(&value));
 }
 
 #[allow(dead_code)]

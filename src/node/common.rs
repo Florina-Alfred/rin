@@ -37,7 +37,7 @@ pub trait Message {
     }
 }
 
-#[tracing::instrument]
+// #[tracing::instrument]
 pub fn logger(message: String) {
     tokio::spawn(async move {
         println!("{}", message);
@@ -168,16 +168,21 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PropagationContext(HashMap<String, String>);
-
 impl PropagationContext {
     fn empty() -> Self {
-        Self(HashMap::new())
+        let mut new = HashMap::new();
+        new.insert(
+            "traceparent".to_string(),
+            "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01".to_string(),
+        );
+        Self(new)
     }
 
     pub fn inject(context: &opentelemetry::Context) -> Self {
         global::get_text_map_propagator(|propagator| {
             let mut propagation_context = PropagationContext::empty();
             propagator.inject_context(context, &mut propagation_context);
+            println!("----------------{:?}", propagation_context);
             propagation_context
         })
     }
