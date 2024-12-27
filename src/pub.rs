@@ -54,6 +54,7 @@ async fn main() {
     let pub_msg_struct = MachineMessage {
         message: "message".to_string(),
         count: 0,
+        span: tracing::Span::current().context(),
     };
     println!("-------Current Message: {:?}", pub_msg_struct);
     for _ in 0..3 {

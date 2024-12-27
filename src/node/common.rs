@@ -1,4 +1,5 @@
 use opentelemetry::{global, trace::TracerProvider as _, KeyValue};
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{
     metrics::{MeterProviderBuilder, PeriodicReader, SdkMeterProvider},
     runtime,
@@ -103,6 +104,7 @@ fn init_tracer_provider() -> TracerProvider {
 }
 
 pub fn init_tracing_subscriber() -> OtelGuard {
+    global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer_provider = init_tracer_provider();
     let meter_provider = init_meter_provider();
 
@@ -140,21 +142,24 @@ impl Drop for OtelGuard {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct SpannedMessage {
-    message: String,
-    span: PropagationContext,
+pub struct SpannedMessage {
+    pub message: String,
+    pub span: PropagationContext,
 }
 
+use opentelemetry::Context;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-pub fn spanned_message(message: String) -> String {
-    let parent_context = tracing::Span::current().context();
-    let propagation_context = PropagationContext::inject(&parent_context);
-    let new_message = SpannedMessage {
-        message,
-        span: propagation_context,
-    };
-    let serialized = serde_json::to_string(&new_message).unwrap();
-    return serialized;
+// #[tracing::instrument]
+pub fn spanned_message(message: String, span: tracing::Span) -> String {
+    span.in_scope(|| {
+        let propagation_context = PropagationContext::inject(&span.context());
+        let new_message = SpannedMessage {
+            message,
+            span: propagation_context,
+        };
+        let serialized = serde_json::to_string(&new_message).unwrap();
+        return serialized;
+    })
 }
 pub fn unspanned_message(
     message: String,
@@ -167,28 +172,34 @@ use opentelemetry::propagation::{Extractor, Injector};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct PropagationContext(HashMap<String, String>);
+pub struct PropagationContext(pub HashMap<String, String>);
 impl PropagationContext {
     fn empty() -> Self {
-        let mut new = HashMap::new();
-        new.insert(
-            "traceparent".to_string(),
-            "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01".to_string(),
-        );
-        Self(new)
+        Self(HashMap::new())
     }
 
     pub fn inject(context: &opentelemetry::Context) -> Self {
         global::get_text_map_propagator(|propagator| {
             let mut propagation_context = PropagationContext::empty();
             propagator.inject_context(context, &mut propagation_context);
-            println!("----------------{:?}", propagation_context);
+            println!(
+                "Injecting-------------------: {:?} with context {:?}",
+                propagation_context, context
+            );
             propagation_context
         })
     }
 
-    pub fn extract(&self) -> opentelemetry::Context {
-        global::get_text_map_propagator(|propagator| propagator.extract(self))
+    pub fn extract(&self, help: &str) -> opentelemetry::Context {
+        global::get_text_map_propagator(|propagator| {
+            println!(
+                "Extracting for {}---------------: {:?} and extraced------{:?}",
+                help,
+                self,
+                propagator.extract(self)
+            );
+            return propagator.extract(self);
+        })
     }
 }
 
@@ -207,4 +218,14 @@ impl Extractor for PropagationContext {
     fn keys(&self) -> Vec<&str> {
         self.0.keys().map(|k| k.as_ref()).collect()
     }
+}
+
+#[tracing::instrument]
+pub fn get_propagator() -> PropagationContext {
+    // global::set_text_map_propagator(TraceContextPropagator::new());
+    global::get_text_map_propagator(|propagator| {
+        let mut propagation_context = PropagationContext::empty();
+        propagator.inject_context(&opentelemetry::Context::current(), &mut propagation_context);
+        propagation_context
+    })
 }

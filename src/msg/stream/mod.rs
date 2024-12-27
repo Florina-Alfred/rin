@@ -87,16 +87,25 @@ pub struct MachineMessage {
     // span: tracing::Span,
 }
 
+impl MachineMessage {
+    #[allow(dead_code)]
+    // #[tracing::instrument]
+    pub fn new(message: String, count: u32) -> Self {
+        let parent_context = tracing::Span::current().context();
+        let propagation_context = PropagationContext::inject(&parent_context);
+        MachineMessage {
+            message,
+            count,
+            span: propagation_context,
+        }
+    }
+}
+
 impl Default for MachineMessage {
     // #[tracing::instrument]
     fn default() -> Self {
-        // let parent_context = tracing::Span::current().context();
         let parent_context = tracing::Span::none().context();
         let propagation_context = PropagationContext::inject(&parent_context);
-        // let mut carrier = HashMap::new();
-        // let propagator = TraceContextPropagator::new();
-        // let parent_context = propagator.extract(&carrier);
-        // println!("Parent context: {:?}", parent_context);
         MachineMessage {
             message: "message 0".to_string(),
             count: 0,
@@ -111,8 +120,7 @@ impl Message for MachineMessage {
         self.count += 1;
         self.message = format!("message {}", self.count);
         let span = tracing::Span::current();
-        println!("Span: ------------------>{:?}", span);
-        if self.count > 0 {
+        if self.count > 10 {
             None
         } else {
             Some(self)

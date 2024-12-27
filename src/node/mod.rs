@@ -1,13 +1,14 @@
 pub mod common;
 
 use common::Message;
+use common::{spanned_message, unspanned_message};
+use opentelemetry::trace::{TraceContextExt, Tracer};
 use serde::Serialize;
 use serde_json::json;
 use std::fmt::Debug;
-use zenoh::bytes::Encoding;
-// use zenoh::handlers::FifoChannelHandler;
-use tracing::{debug, info};
+use tracing::{debug, info, info_span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
+use zenoh::bytes::Encoding;
 use zenoh::Config;
 
 #[allow(dead_code)]
@@ -85,18 +86,25 @@ pub async fn start_publisher(
     common::logger(format!("{} ending data: {:?}", &name, &payload).to_string());
 
     loop {
-        let buf = payload.ser();
+        // let buf = payload.ser();
+        println!(
+            "Current span: {:?} with context {:?}",
+            tracing::Span::current(),
+            tracing::Span::current().context()
+        );
+        let span = info_span!("Sending data", payload = ?payload);
+        let buf = spanned_message(payload.ser(), span);
         common::logger(format!(
             "<< [{:>16}] Serialized data ('{}': '{:?}')...",
             &name, &key_expr, &buf
         ));
-        // let buf = common::spanned_message(buf);
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
             .attachment(attachment.clone())
             .await
             .unwrap();
+
         match payload.next().await {
             Some(_) => (),
             None => break,
@@ -206,11 +214,23 @@ pub async fn start_subscriber<T>(
             )
             .to_string(),
         );
+        info!("Received data: {}", payload);
 
         let value = payload.to_string();
         for f in &callback {
-            // current_span.in_scope(|| f(msg.deser(&value)));
-            f(msg.deser(&value));
+            // f(msg.deser(&value));
+            let (value, span) = unspanned_message(value.clone()).unwrap();
+            let parent_context = span.extract("start_subscriber with callback");
+            let span = info_span!("Received data", payload = ?value);
+            span.set_parent(parent_context);
+
+            // span.in_scope(|| f(msg.deser(&value)));
+            span.in_scope(|| {
+                f(msg.deser(&value));
+            });
+
+            // f(msg.deser(&value));
+            // callback_caller(*f, msg.deser(&value), value);
         }
         // loop_callbacks(msg, payload.to_string(), callback.clone());
 
@@ -218,7 +238,7 @@ pub async fn start_subscriber<T>(
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
             common::logger(format!(" ({})", att).to_string());
         }
-        break;
+        // break;
     }
 }
 

@@ -36,13 +36,14 @@ fn user_message_callback(input: UserMessage) {
     println!();
 }
 
-// #[allow(dead_code)]
-// #[tracing::instrument]
+#[allow(dead_code)]
+#[tracing::instrument]
 fn machine_message_callback(input: MachineMessage) {
-    let parent_context = input.span.extract();
-    let span = tracing::Span::current();
-    span.set_parent(parent_context);
-    println!("Span: {:?}", span);
+    // let parent_context = input.span.extract("callback");
+    // println!("Parent context from MM callback: {:?}", parent_context);
+    // let span = tracing::Span::current();
+    // span.set_parent(parent_context);
+    // println!("Span inside Machine message callback {:?}", span);
     tracing::debug_span!("Machine message callback");
     tracing::debug_span!("Message: {}", input.message);
     tracing::debug_span!("Count: {}", input.count);
