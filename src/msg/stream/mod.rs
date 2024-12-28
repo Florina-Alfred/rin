@@ -1,7 +1,5 @@
-use crate::node::common::PropagationContext;
-use serde::{Deserialize, Serialize};
-// use serde_json;
 use crate::node::common::Message;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -13,7 +11,6 @@ pub struct Stream {
 
 impl Stream {
     #[allow(dead_code)]
-    // #[tracing::instrument]
     pub fn new(start: Option<u32>, length: Option<u32>) -> Self {
         if let (Some(start), Some(length)) = (start, length) {
             Stream {
@@ -32,10 +29,10 @@ impl Stream {
 }
 
 impl Message for Stream {
-    #[tracing::instrument]
+    // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.num += 1;
-        // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
@@ -60,7 +57,7 @@ pub struct UserMessage {
 }
 
 impl Message for UserMessage {
-    #[tracing::instrument]
+    // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.number = (self.number.parse::<u32>().unwrap() + 1).to_string();
         self.value = format!("value {}", self.number);
@@ -74,52 +71,34 @@ impl Message for UserMessage {
     }
 }
 
-// use opentelemetry::{propagation::TextMapPropagator, trace::TraceContextExt};
-// use opentelemetry_sdk::propagation::TraceContextPropagator;
-// use std::collections::HashMap;
-use tracing_opentelemetry::OpenTelemetrySpanExt;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,
-    pub span: PropagationContext,
-    // span: HashMap<String, String>,
-    // span: tracing::Span,
 }
 
 impl MachineMessage {
     #[allow(dead_code)]
-    // #[tracing::instrument]
     pub fn new(message: String, count: u32) -> Self {
-        let parent_context = tracing::Span::current().context();
-        let propagation_context = PropagationContext::inject(&parent_context);
-        MachineMessage {
-            message,
-            count,
-            span: propagation_context,
-        }
+        MachineMessage { message, count }
     }
 }
 
 impl Default for MachineMessage {
-    // #[tracing::instrument]
     fn default() -> Self {
-        let parent_context = tracing::Span::none().context();
-        let propagation_context = PropagationContext::inject(&parent_context);
         MachineMessage {
             message: "message 0".to_string(),
             count: 0,
-            span: propagation_context,
         }
     }
 }
 
 impl Message for MachineMessage {
-    #[tracing::instrument]
+    // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.count += 1;
         self.message = format!("message {}", self.count);
-        let span = tracing::Span::current();
+        // std::thread::sleep(std::time::Duration::from_secs(1));
         if self.count > 10 {
             None
         } else {

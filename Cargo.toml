@@ -24,6 +24,10 @@ name = "s"
 path = "src/sub.rs"
 
 [[bin]]
+name = "live"
+path = "src/liveliness.rs"
+
+[[bin]]
 name = "temp"
 path = "src/temp.rs"
 

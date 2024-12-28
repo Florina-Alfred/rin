@@ -17,6 +17,7 @@ pub struct Publisher<'a> {
     session: zenoh::Session,
     attachment: Option<String>,
     publisher: zenoh::pubsub::Publisher<'a>,
+    pub token: zenoh::liveliness::LivelinessToken,
 }
 
 #[allow(dead_code)]
@@ -39,11 +40,13 @@ impl<'a> Publisher<'a> {
         common::logger("Opening session...".to_string());
         let session = zenoh::open(config).await.unwrap();
         let publisher = session.declare_publisher(key_expr).await.unwrap();
+        let token = session.liveliness().declare_token(key_expr).await.unwrap();
         common::logger(format!("Publisher: {:?}", publisher).to_string());
         Ok(Publisher {
             session,
             attachment,
             publisher,
+            token,
         })
     }
     #[tracing::instrument]
@@ -60,7 +63,7 @@ impl<'a> Publisher<'a> {
 }
 
 #[allow(dead_code)]
-#[tracing::instrument]
+// #[tracing::instrument]
 pub async fn start_publisher(
     name: &str,
     key_expr: &str,
@@ -82,16 +85,12 @@ pub async fn start_publisher(
 
     common::logger(format!("Declaring {} Publisher on '{}'...", &name, &key_expr).to_string());
     let publisher = session.declare_publisher(key_expr).await.unwrap();
+    let token = session.liveliness().declare_token(key_expr).await.unwrap();
 
     common::logger(format!("{} ending data: {:?}", &name, &payload).to_string());
 
     loop {
         // let buf = payload.ser();
-        println!(
-            "Current span: {:?} with context {:?}",
-            tracing::Span::current(),
-            tracing::Span::current().context()
-        );
         let span = info_span!("Sending data", payload = ?payload);
         let buf = spanned_message(payload.ser(), span);
         common::logger(format!(
@@ -110,6 +109,7 @@ pub async fn start_publisher(
             None => break,
         }
     }
+    token.undeclare().await.unwrap();
 }
 
 #[allow(dead_code)]
@@ -117,9 +117,9 @@ pub async fn start_publisher(
 pub struct Subscriber<T> {
     session: zenoh::Session,
     default: T,
-    // subscriber: zenoh::pubsub::Subscriber<zenoh::handlers::fifo::FifoChannelHandler<T>>,
     subscriber:
         zenoh::pubsub::Subscriber<zenoh::handlers::fifo::FifoChannelHandler<zenoh::sample::Sample>>,
+    pub token: zenoh::liveliness::LivelinessToken,
 }
 
 #[allow(dead_code)]
@@ -145,11 +145,13 @@ impl<T> Subscriber<T> {
         common::logger("Opening session...".to_string());
         let session = zenoh::open(config).await.unwrap();
         let subscriber = session.declare_subscriber(key_expr).await.unwrap();
+        let token = session.liveliness().declare_token(key_expr).await.unwrap();
 
         Ok(Subscriber::<T> {
             session,
             default: T::default(),
             subscriber,
+            token,
         })
     }
     #[tracing::instrument]
@@ -193,6 +195,7 @@ pub async fn start_subscriber<T>(
 
     common::logger(format!("Declaring {} Subscriber on '{}'...", &name, &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
+    let token = session.liveliness().declare_token(key_expr).await.unwrap();
 
     while let Ok(sample) = subscriber.recv_async().await {
         let msg = T::default();
@@ -200,9 +203,6 @@ pub async fn start_subscriber<T>(
             .payload()
             .try_to_string()
             .unwrap_or_else(|e| e.to_string().into());
-        // let (payload, span) = common::unspanned_message(payload.to_string()).unwrap();
-        // let current_span = tracing::Span::none();
-        // current_span.set_parent(span.extract());
 
         common::logger(
             format!(
@@ -220,45 +220,21 @@ pub async fn start_subscriber<T>(
         for f in &callback {
             // f(msg.deser(&value));
             let (value, span) = unspanned_message(value.clone()).unwrap();
-            let parent_context = span.extract("start_subscriber with callback");
+            let parent_context = span.extract();
             let span = info_span!("Received data", payload = ?value);
             span.set_parent(parent_context);
 
-            // span.in_scope(|| f(msg.deser(&value)));
             span.in_scope(|| {
                 f(msg.deser(&value));
             });
-
-            // f(msg.deser(&value));
-            // callback_caller(*f, msg.deser(&value), value);
         }
-        // loop_callbacks(msg, payload.to_string(), callback.clone());
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
             common::logger(format!(" ({})", att).to_string());
         }
-        // break;
     }
-}
-
-#[tracing::instrument]
-fn loop_callbacks<T>(msg: T, payload: String, callback: Vec<fn(T)>)
-where
-    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
-{
-    for f in &callback {
-        callback_caller(*f, msg.clone(), payload.clone());
-    }
-}
-
-#[tracing::instrument]
-fn callback_caller<T>(callback: fn(T), msg: T, payload: String)
-where
-    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
-{
-    let value = payload.to_string();
-    callback(msg.deser(&value));
+    token.undeclare().await.unwrap();
 }
 
 #[allow(dead_code)]
@@ -293,7 +269,17 @@ pub async fn start_subscriber_publisher<T, S>(
         .to_string(),
     );
     let subscriber = session.declare_subscriber(key_expr_sub).await.unwrap();
+    let token_sub = session
+        .liveliness()
+        .declare_token(key_expr_sub)
+        .await
+        .unwrap();
     let publisher = session.declare_publisher(key_expr_pub).await.unwrap();
+    let token_pub = session
+        .liveliness()
+        .declare_token(key_expr_pub)
+        .await
+        .unwrap();
 
     while let Ok(sample) = subscriber.recv_async().await {
         let msg = T::default();
@@ -332,4 +318,6 @@ pub async fn start_subscriber_publisher<T, S>(
             .await
             .unwrap();
     }
+    token_sub.undeclare().await.unwrap();
+    token_pub.undeclare().await.unwrap();
 }

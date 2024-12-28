@@ -23,7 +23,6 @@ fn stream_modifier(input: Stream) -> UserMessage {
         count: input.num,
         bytes: vec![0, 1, 2, 3, 4],
     };
-    // println!("Output----------> {:?}", output);
     println!();
     return output;
 }
@@ -37,13 +36,10 @@ fn user_message_modifier(input: UserMessage) -> MachineMessage {
     println!("Count: {}", input.count);
     println!("Bytes: {:?}", input.bytes);
     println!();
-    let parent_context = tracing::Span::none().context();
-    let propagation_context = PropagationContext::inject(&parent_context);
 
     MachineMessage {
         message: format!("message {}", input.number),
         count: input.count,
-        span: propagation_context,
     }
 }
 

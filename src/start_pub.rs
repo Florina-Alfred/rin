@@ -15,9 +15,9 @@ async fn main() {
     let args = Args::parse();
     let _guard = common::init_tracing_subscriber();
 
-    // let pub_msg_struct = Stream::new(Some(args.start), Some(5));
+    let pub_msg_struct = Stream::new(Some(args.start), Some(15));
     // let pub_msg_struct = MachineMessage::default();
-    let pub_msg_struct = MachineMessage::new("message 0".to_string(), 0);
+    // let pub_msg_struct = MachineMessage::new("message 0".to_string(), 0);
     // info!(?pub_msg_struct, "Starting publisher");
     // let temp = pub_msg_struct.clone();
     node::start_publisher(
