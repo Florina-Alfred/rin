@@ -11,6 +11,7 @@ use opentelemetry_semantic_conventions::{
     attribute::{DEPLOYMENT_ENVIRONMENT_NAME, SERVICE_NAME, SERVICE_VERSION},
     SCHEMA_URL,
 };
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -48,6 +49,37 @@ pub fn logger(message: String) {
         // tracing::debug!(message);
     });
 }
+
+pub struct DB {
+    pub conn: Connection,
+    pub unique: Option<Vec<String>>,
+}
+
+impl DB {
+    pub fn new() -> Self {
+        let conn = Connection::open("state.db").unwrap();
+        // let conn = Connection::open_in_memory()?;
+
+        match conn.execute(
+            "CREATE TABLE state (
+            id    INTEGER PRIMARY KEY,
+            name  TEXT NOT NULL,
+            topic TEXT NOT NULL
+        )",
+            (),
+        ) {
+            Ok(_) => println!("Table created!"),
+            Err(_) => println!("Table already exists!"),
+        }
+        Self { conn, unique: None }
+    }
+}
+
+// impl Drop for DB {
+//     fn drop(&mut self) {
+//         println!("Dropping DB");
+//     }
+// }
 
 #[allow(dead_code)]
 fn print_type_of<T>(_: &T) {

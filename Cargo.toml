@@ -54,4 +54,5 @@ tracing-core = "0.1.33"
 tracing-log = "0.2.0"
 tracing-opentelemetry = "0.28.0"
 tracing-subscriber = {version="0.3.19", features=["env-filter","fmt","std", "registry"]}
+rusqlite = { version = "0.32.1", features = ["bundled"] }
 

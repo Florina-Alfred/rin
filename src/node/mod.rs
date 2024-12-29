@@ -83,6 +83,12 @@ pub async fn start_publisher(
     common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
 
+    let db = common::DB::new();
+    let _ = db.conn.execute(
+        "INSERT INTO state (name, topic) VALUES (?1, ?2)",
+        (&name.to_string(), &key_expr.to_string()),
+    );
+
     common::logger(format!("Declaring {} Publisher on '{}'...", &name, &key_expr).to_string());
     let publisher = session.declare_publisher(key_expr).await.unwrap();
     let token = session.liveliness().declare_token(key_expr).await.unwrap();
@@ -109,6 +115,12 @@ pub async fn start_publisher(
             None => break,
         }
     }
+    db.conn
+        .execute(
+            "DELETE FROM state WHERE name = ?1 AND topic = ?2",
+            (&name.to_string(), &key_expr.to_string()),
+        )
+        .unwrap();
     token.undeclare().await.unwrap();
 }
 
@@ -193,6 +205,12 @@ pub async fn start_subscriber<T>(
     common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
 
+    let db = common::DB::new();
+    let _ = db.conn.execute(
+        "INSERT INTO state (name, topic) VALUES (?1, ?2)",
+        (&name.to_string(), &key_expr.to_string()),
+    );
+
     common::logger(format!("Declaring {} Subscriber on '{}'...", &name, &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
     let token = session.liveliness().declare_token(key_expr).await.unwrap();
@@ -235,6 +253,12 @@ pub async fn start_subscriber<T>(
         }
     }
     token.undeclare().await.unwrap();
+    db.conn
+        .execute(
+            "DELETE FROM state WHERE name = ?1 AND topic = ?2",
+            (&name.to_string(), &key_expr.to_string()),
+        )
+        .unwrap();
 }
 
 #[allow(dead_code)]
