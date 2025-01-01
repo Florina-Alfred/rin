@@ -2,6 +2,7 @@ use opentelemetry::propagation::{Extractor, Injector};
 use opentelemetry::{global, trace::TracerProvider as _, KeyValue};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use opentelemetry_sdk::{
+    logs::LoggerProvider,
     metrics::{MeterProviderBuilder, PeriodicReader, SdkMeterProvider},
     runtime,
     trace::TracerProvider,
@@ -126,22 +127,45 @@ fn init_meter_provider() -> SdkMeterProvider {
     meter_provider
 }
 
+fn init_log_provider() -> LoggerProvider {
+    let log_exporter = opentelemetry_otlp::LogExporter::builder()
+        .with_tonic()
+        .build()
+        .unwrap();
+
+    let log_provider = LoggerProvider::builder()
+        .with_resource(resource())
+        // .with_log_processor(
+        //     opentelemetry_sdk::logs::BatchLogProcessor::builder(log_exporter, runtime::Tokio)
+        //         .build(),
+        // )
+        .with_batch_exporter(log_exporter, runtime::Tokio)
+        .build();
+
+    log_provider
+}
+
 fn init_tracer_provider() -> TracerProvider {
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
         .build()
         .unwrap();
 
-    TracerProvider::builder()
+    let trace_provide = TracerProvider::builder()
         .with_resource(resource())
         .with_batch_exporter(exporter, runtime::Tokio)
-        .build()
+        .build();
+
+    global::set_tracer_provider(trace_provide.clone());
+
+    trace_provide
 }
 
 pub fn init_tracing_subscriber() -> OtelGuard {
     global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer_provider = init_tracer_provider();
     let meter_provider = init_meter_provider();
+    let log_provider = init_log_provider();
 
     let tracer = tracer_provider.tracer("tracing-otel-subscriber");
 
@@ -152,6 +176,11 @@ pub fn init_tracing_subscriber() -> OtelGuard {
         .with(tracing_subscriber::fmt::layer())
         .with(MetricsLayer::new(meter_provider.clone()))
         .with(OpenTelemetryLayer::new(tracer))
+        .with(
+            opentelemetry_appender_tracing::layer::OpenTelemetryTracingBridge::new(
+                &log_provider.clone(),
+            ),
+        )
         .init();
 
     OtelGuard {

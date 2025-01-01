@@ -21,6 +21,9 @@ fn stream_callback(input: Stream) {
         "Stream callback:- Start: {:?} Num: {:?}",
         input.start, input.num
     );
+    if input.num == 2025 {
+        tracing::warn!("Happy new year!");
+    }
     println!();
 }
 
