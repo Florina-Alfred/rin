@@ -23,9 +23,15 @@ use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub trait Message {
+    // async fn next(&mut self) -> Option<&mut Self>
+    // where
+    //     Self: Sized;
     async fn next(&mut self) -> Option<&mut Self>
     where
-        Self: Sized;
+        Self: Sized,
+    {
+        return Some(self);
+    }
     fn ser(&self) -> String
     where
         Self: Serialize,
