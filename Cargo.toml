@@ -48,6 +48,7 @@ opentelemetry-otlp = { version = "0.27.0", features = ["default","http-json","ht
 opentelemetry-semantic-conventions = {version="0.27.0", features = ["semconv_experimental"]}
 opentelemetry-stdout = { version = "0.27.0", features = ["logs","trace"] }
 opentelemetry_sdk = { version = "0.27.1", features = ["logs", "rt-tokio","metrics"] }
+opentelemetry-appender-tracing = "0.27.0"
 
 tracing = {version="0.1.41", features=["std"]}
 tracing-core = "0.1.33"
@@ -55,5 +56,4 @@ tracing-log = "0.2.0"
 tracing-opentelemetry = "0.28.0"
 tracing-subscriber = {version="0.3.19", features=["env-filter","fmt","std", "registry"]}
 rusqlite = { version = "0.32.1", features = ["bundled"] }
-opentelemetry-appender-tracing = "0.27.0"
 

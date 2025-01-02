@@ -59,7 +59,6 @@ pub fn logger(message: String) {
 
 pub struct DB {
     pub conn: Connection,
-    pub unique: Option<Vec<String>>,
 }
 
 impl DB {
@@ -78,7 +77,7 @@ impl DB {
             Ok(_) => println!("Table created!"),
             Err(_) => println!("Table already exists!"),
         }
-        Self { conn, unique: None }
+        Self { conn }
     }
 }
 

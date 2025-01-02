@@ -9,6 +9,8 @@ services:
       - "7447:7447"
       - "8000:8000"
     restart: unless-stopped
+    volumes:
+      - ./zenoh_docker:/root/.zenoh
 
   otel_lgtm:
     image: grafana/otel-lgtm:latest

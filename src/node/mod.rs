@@ -2,11 +2,10 @@ pub mod common;
 
 use common::Message;
 use common::{spanned_message, unspanned_message};
-use opentelemetry::trace::{TraceContextExt, Tracer};
 use serde::Serialize;
 use serde_json::json;
 use std::fmt::Debug;
-use tracing::{debug, info, info_span};
+use tracing::{info, info_span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use zenoh::bytes::Encoding;
 use zenoh::Config;
