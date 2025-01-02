@@ -28,6 +28,10 @@ name = "live"
 path = "src/liveliness.rs"
 
 [[bin]]
+name = "rin"
+path = "src/main.rs"
+
+[[bin]]
 name = "temp"
 path = "src/temp.rs"
 

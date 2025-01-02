@@ -51,6 +51,7 @@ impl<'a> Publisher<'a> {
     #[tracing::instrument]
     pub async fn publish(&self, message: impl Message + Debug + Serialize) {
         common::logger(format!("Publishing message: {:?}", message).to_string());
+        info!("Publishing data: {:?}", message);
         let buf = message.ser();
         self.publisher
             .put(buf)
@@ -97,6 +98,7 @@ pub async fn start_publisher(
     loop {
         // let buf = payload.ser();
         let span = info_span!("Sending data", payload = ?payload);
+        info!("Sending data: {:?}", payload);
         let buf = spanned_message(payload.ser(), span);
         common::logger(format!(
             "<< [{:>16}] Serialized data ('{}': '{:?}')...",
@@ -177,6 +179,7 @@ impl<T> Subscriber<T> {
             .unwrap_or_else(|e| e.to_string().into());
 
         let value = payload.clone().to_string();
+        info!("Received data: {}", value);
 
         return Ok(self.default.deser(&value));
     }

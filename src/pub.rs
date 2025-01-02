@@ -7,7 +7,7 @@ use clap::Parser;
 #[allow(unused_imports)]
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use tokio;
-use tracing::info;
+// use tracing::info;
 
 #[tokio::main]
 async fn main() {
