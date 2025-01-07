@@ -100,10 +100,10 @@ pub async fn start_publisher(
         let span = info_span!("Sending data", payload = ?payload);
         info!("Sending data: {:?}", payload);
         let buf = spanned_message(payload.ser(), span);
-        common::logger(format!(
-            "<< [{:>16}] Serialized data ('{}': '{:?}')...",
-            &name, &key_expr, &buf
-        ));
+        // common::logger(format!(
+        //     "<< [{:>16}] Serialized data ('{}': '{:?}')...",
+        //     &name, &key_expr, &buf
+        // ));
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
@@ -224,16 +224,16 @@ pub async fn start_subscriber<T>(
             .try_to_string()
             .unwrap_or_else(|e| e.to_string().into());
 
-        common::logger(
-            format!(
-                ">> [{:>16}] Received {} ('{}': '{}')\n",
-                &name,
-                sample.kind(),
-                sample.key_expr().as_str(),
-                payload
-            )
-            .to_string(),
-        );
+        // common::logger(
+        //     format!(
+        //         ">> [{:>16}] Received {} ('{}': '{}')\n",
+        //         &name,
+        //         sample.kind(),
+        //         sample.key_expr().as_str(),
+        //         payload
+        //     )
+        //     .to_string(),
+        // );
         info!("Received data: {}", payload);
 
         let value = payload.to_string();

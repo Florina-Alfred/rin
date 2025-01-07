@@ -11,31 +11,30 @@ use tokio;
 #[allow(dead_code)]
 #[tracing::instrument]
 fn generic_callback<T: std::fmt::Debug>(input: T) {
-    println!("Generic callback: {:?}", input);
+    tracing::warn!("Generic callback: {:?}", input);
 }
 
 #[allow(dead_code)]
 #[tracing::instrument]
 fn stream_callback(input: Stream) {
-    println!(
+    tracing::warn!(
         "Stream callback:- Start: {:?} Num: {:?}",
-        input.start, input.num
+        input.start,
+        input.num
     );
     if input.num == 2025 {
         tracing::warn!("Happy new year!");
     }
-    println!();
 }
 
 #[allow(dead_code)]
 #[tracing::instrument]
 fn user_message_callback(input: UserMessage) {
-    println!("User message callback");
-    println!("Number: {}", input.number);
-    println!("Value: {}", input.value);
-    println!("Count: {}", input.count);
-    println!("Bytes: {:?}", input.bytes);
-    println!();
+    tracing::warn!("User message callback");
+    tracing::warn!("Number: {}", input.number);
+    tracing::warn!("Value: {}", input.value);
+    tracing::warn!("Count: {}", input.count);
+    tracing::warn!("Bytes: {:?}", input.bytes);
 }
 
 #[allow(dead_code)]
@@ -44,7 +43,6 @@ fn machine_message_callback(input: MachineMessage) {
     tracing::debug_span!("Machine message callback");
     tracing::debug_span!("Message: {}", input.message);
     tracing::debug_span!("Count: {}", input.count);
-    println!();
 }
 
 #[tokio::main]
