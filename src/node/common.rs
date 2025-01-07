@@ -175,9 +175,10 @@ pub fn init_tracing_subscriber() -> OtelGuard {
     let tracer = tracer_provider.tracer("tracing-otel-subscriber");
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::filter::LevelFilter::from_level(
-            Level::INFO,
-        ))
+        // .with(tracing_subscriber::filter::LevelFilter::from_level(
+        //     Level::INFO,
+        // ))
+        .with(tracing_subscriber::filter::EnvFilter::from_default_env())
         .with(tracing_subscriber::fmt::layer())
         .with(MetricsLayer::new(meter_provider.clone()))
         .with(OpenTelemetryLayer::new(tracer))
