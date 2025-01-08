@@ -1,46 +1,84 @@
-use serde_json::json;
-use zenoh::sample::SampleKind;
-use zenoh::{key_expr::KeyExpr, Config};
+use gstreamer::prelude::*;
+use gstreamer::{Bus, ElementFactory, Message, MessageView, Pipeline, State, StateChangeError};
 
-#[tokio::main]
-async fn main() {
-    // Initiate logging
-    zenoh::init_log_from_env_or("error");
+fn main() {
+    // Initialize GStreamer
+    gstreamer::init().expect("Failed to initialize GStreamer");
 
-    // let key_expr: KeyExpr<'static> = "/demo/example/liveliness".parse().unwrap();
-    let key_expr: KeyExpr<'static> = "test_topic".parse().unwrap();
-    let timeout = std::time::Duration::from_secs(5);
-    let history = true;
-    let mut config = Config::default();
-    let _ = config.insert_json5("mode", &json!("client").to_string());
-    let _ = config.insert_json5(
-        "connect/endpoints",
-        &json!(vec!["tcp/0.0.0.0:7447"]).to_string(),
-    );
+    // Create a new GStreamer pipeline
+    let pipeline = Pipeline::with_name("test-pipeline");
 
-    println!("Opening session...");
-    let session = zenoh::open(config).await.unwrap();
+    // Create the elements
+    let rtspsrc = ElementFactory::make("rtspsrc")
+        .name("rtspsrc")
+        .property_from_str("location", "rtsp://localhost:8554/tester")
+        .property_from_str("latency", "0")
+        .build()
+        .expect("Failed to create rtspsrc element");
 
-    println!("Sending Liveliness Query '{key_expr}'...");
-    let subscriber = session
-        .liveliness()
-        .declare_subscriber(&key_expr)
-        .history(history)
-        .await
-        .unwrap();
+    let decodebin = ElementFactory::make("decodebin")
+        .name("decodebin")
+        .build()
+        .expect("Failed to create decodebin element");
 
-    println!("Press CTRL-C to quit...");
-    while let Ok(sample) = subscriber.recv_async().await {
-        match sample.kind() {
-            SampleKind::Put => println!(
-                ">> [LivelinessSubscriber] New alive token ('{}')",
-                sample.key_expr().as_str()
-            ),
-            SampleKind::Delete => println!(
-                ">> [LivelinessSubscriber] Dropped token ('{}')",
-                sample.key_expr().as_str()
-            ),
+    let videoconvert = ElementFactory::make("videoconvert")
+        .name("videoconvert")
+        .build()
+        .expect("Failed to create videoconvert element");
+
+    let autovideosink = ElementFactory::make("autovideosink")
+        .name("autovideosink")
+        .build()
+        .expect("Failed to create autovideosink element");
+
+    // Add elements to the pipeline
+    pipeline
+        .add_many(&[&rtspsrc, &decodebin, &videoconvert, &autovideosink])
+        .expect("Failed to add elements to the pipeline");
+
+    // Link the elements
+    rtspsrc
+        .link(&decodebin)
+        .expect("Failed to link rtspsrc to decodebin");
+    decodebin.connect_pad_added(move |_, pad| {
+        // When the decodebin is ready, link it to videoconvert
+        if let Some(sinkpad) = videoconvert.static_pad("sink") {
+            pad.link(&sinkpad)
+                .expect("Failed to link decodebin to videoconvert");
+        }
+    });
+    videoconvert
+        .link(&autovideosink)
+        .expect("Failed to link videoconvert to autovideosink");
+
+    // Start playing the pipeline
+    pipeline
+        .set_state(State::Playing)
+        .expect("Failed to set pipeline to Playing");
+
+    // Wait until an error or EOS (End Of Stream)
+    let bus = pipeline.bus().unwrap();
+    for msg in bus.iter_timed(gstreamer::CLOCK_TIME_NONE) {
+        match msg.view() {
+            MessageView::Eos(..) => {
+                println!("End of Stream");
+                break;
+            }
+            MessageView::Error(err) => {
+                eprintln!(
+                    "Error: {}: {}",
+                    err.error(),
+                    err.debug().unwrap_or_else(|| String::from("No debug info"))
+                );
+                break;
+            }
+            _ => (),
         }
     }
+
+    // Clean up the pipeline
+    pipeline
+        .set_state(State::Null)
+        .expect("Failed to set pipeline to Null");
 }
 
