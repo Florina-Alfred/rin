@@ -1,5 +1,5 @@
 use gstreamer::prelude::*;
-use gstreamer::{Bus, ElementFactory, Message, MessageView, Pipeline, State, StateChangeError};
+use gstreamer::{ElementFactory, MessageView, Pipeline, State};
 use std::sync::{Arc, Mutex};
 
 fn main() {

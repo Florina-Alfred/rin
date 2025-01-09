@@ -32,6 +32,10 @@ name = "rin"
 path = "src/main.rs"
 
 [[bin]]
+name = "vp"
+path = "src/video_stream_pub.rs"
+
+[[bin]]
 name = "vs"
 path = "src/video_stream_sub.rs"
 
