@@ -74,4 +74,3 @@ fn main() {
         .set_state(State::Null)
         .expect("Failed to set pipeline to Null");
 }
-
