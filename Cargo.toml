@@ -36,6 +36,14 @@ name = "vp"
 path = "src/start_video_pub.rs"
 
 [[bin]]
+name = "ws"
+path = "src/websocket.rs"
+
+[[bin]]
+name = "cwb"
+path = "src/client_websocket.rs"
+
+[[bin]]
 name = "vs"
 path = "src/start_video_sub.rs"
 
@@ -69,4 +77,11 @@ tracing-opentelemetry = "0.28.0"
 tracing-subscriber = {version="0.3.19", features=["env-filter","fmt","std", "registry"]}
 rusqlite = { version = "0.32.1", features = ["bundled"] }
 gstreamer = "0.23.4"
+axum = { version = "0.8.1", features = ["ws"] }
+tokio-tungstenite = "0.26.1"
+futures-util = "0.3.31"
+futures = "0.3.31"
+axum-extra = { version = "0.10.0", features = ["typed-header"] }
+headers = "0.4.0"
+tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 
