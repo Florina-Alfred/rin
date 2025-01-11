@@ -40,11 +40,14 @@ services:
     #   - ffmpeg -f v4l2 -i /dev/video0 -c:v libx264 -pix_fmt yuv420p -preset ultrafast -tune zerolatency -b:v 200k -f rtsp rtsp://0.0.0.0:8554/tester
     #   - ffplay -fflags nobuffer -fflags discardcorrupt -flags low_delay -framedrop -avioflags direct -rtsp_transport  tcp rtsp://localhost:8554/tester
     #   - gst-launch-1.0 -v v4l2src device=/dev/video0 ! video/x-raw,framerate=30/1 ! videoconvert ! x264enc tune=zerolatency speed-preset=ultrafast ! rtspclientsink location=rtsp://0.0.0.0:8554/tester protocols=tcp
+    #   - gst-launch-1.0 v4l2src device=/dev/video0 ! videoconvert ! x264enc ! mpegtsmux ! hlssink
+    #     - python3 -m http.server 8888
     #
     # INTERNET:
     #   - ffmpeg -f v4l2 -i /dev/video0 -c:v libx264 -preset ultrafast -tune zerolatency -b:v 200k -maxrate 1M -bufsize 2M -f rtsp rtsp://localhost:8554/tester
     #   - ffplay rtsp://localhost:8554/tester -fflags nobuffer -flags low_delay -strict experimental
     #   - gst-launch-1.0 rtspsrc location=rtsp://localhost:8554/tester latency=0 ! decodebin ! videoconvert ! autovideosink
+    #   - gst-launch-1.0 -v souphttpsrc is-live=true location=http://localhost:6000/playlist.m3u8 ! hlsdemux ! tsdemux ! h264parse ! avdec_h264 ! videoconvert ! autovideosink
 
   # jaeger:
   #   image: jaegertracing/all-in-one:latest
