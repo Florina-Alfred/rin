@@ -246,6 +246,7 @@ pub async fn start_subscriber<T>(
 
             span.in_scope(|| {
                 f(msg.deser(&value));
+                // info!("Metrics: {:?}", msg.deser(&value));
             });
         }
 

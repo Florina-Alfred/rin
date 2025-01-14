@@ -1,5 +1,6 @@
 use metrics_macros::Metrics;
 
+#[allow(dead_code)]
 #[derive(Metrics)]
 struct Person {
     name: String,

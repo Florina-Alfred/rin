@@ -15,12 +15,12 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 fn stream_modifier(input: Stream) -> UserMessage {
     // println!(
     // "Stream callback:- Start: {:?} Num: {:?}",
-    // input.start, input.num
+    // input.start, input.num_metric
     // );
     let output = UserMessage {
-        number: input.num.to_string(),
-        value: format!("value {}", input.num),
-        count: input.num,
+        number: input.num_metric.to_string(),
+        value: format!("value {}", input.num_metric),
+        count: input.num_metric,
         bytes: vec![0, 1, 2, 3, 4],
     };
     println!();
@@ -53,7 +53,7 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
     Stream {
         start: Some(0),
         length: Some(10),
-        num: 0,
+        num_metric: 0,
     }
 }
 
