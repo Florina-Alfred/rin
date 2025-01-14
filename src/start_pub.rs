@@ -4,6 +4,7 @@ mod node;
 
 use args::Args;
 use clap::Parser;
+// use metrics_macros::Metrics;
 #[allow(unused_imports)]
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use node::common;
@@ -15,7 +16,7 @@ async fn main() {
     let args = Args::parse();
     let _guard = common::init_tracing_subscriber();
 
-    let pub_msg_struct = Stream::new(Some(args.start), Some(1));
+    let pub_msg_struct = Stream::new(Some(args.start), Some(2));
     tracing::info!("------------Metrics: {:?}", pub_msg_struct.give_metrics());
     // let pub_msg_struct = MachineMessage::default();
     // let pub_msg_struct = MachineMessage::new("message 0".to_string(), 0);
