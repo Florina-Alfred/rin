@@ -36,6 +36,6 @@ fn main() {
     let persons = vec![person1, person2];
 
     for person in persons {
-        person.give_metrics();
+        person.print_metrics();
     }
 }

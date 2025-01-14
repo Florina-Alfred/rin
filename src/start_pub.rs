@@ -17,7 +17,7 @@ async fn main() {
     let _guard = common::init_tracing_subscriber();
 
     let pub_msg_struct = Stream::new(Some(args.start), Some(2));
-    tracing::info!("------------Metrics: {:?}", pub_msg_struct.give_metrics());
+    tracing::info!("------------Metrics: {:?}", pub_msg_struct.print_metrics());
     // let pub_msg_struct = MachineMessage::default();
     // let pub_msg_struct = MachineMessage::new("message 0".to_string(), 0);
     // info!(?pub_msg_struct, "Starting publisher");
