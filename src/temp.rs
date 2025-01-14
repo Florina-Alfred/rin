@@ -1,3 +1,6 @@
+use metrics_macros::PrintMetrics;
+
+#[derive(PrintMetrics)]
 struct Person {
     name: String,
     age: u8,
@@ -5,25 +8,7 @@ struct Person {
     position_metric: u8,
     weight_metric: Option<f32>,
     height_metric: Option<f32>,
-}
-
-fn print_metrics(person: Person) {
-    // We can manually check for each field with "_metric" in the name and print it.
-    if person.location_metric.contains("_metric") {
-        println!("Location Metric: {}", person.location_metric);
-    }
-
-    if person.position_metric.to_string().contains("_metric") {
-        println!("Position Metric: {}", person.position_metric);
-    }
-
-    if let Some(weight) = person.weight_metric {
-        println!("Weight Metric: {}", weight);
-    }
-
-    if let Some(height) = person.height_metric {
-        println!("Height Metric: {}", height);
-    }
+    is_active: bool,
 }
 
 fn main() {
@@ -34,6 +19,7 @@ fn main() {
         position_metric: 1,
         weight_metric: Some(70.5),
         height_metric: Some(1.75),
+        is_active: true,
     };
 
     let person2 = Person {
@@ -43,12 +29,13 @@ fn main() {
         position_metric: 2,
         weight_metric: None,
         height_metric: None,
+        is_active: false,
     };
 
     let persons = vec![person1, person2];
 
     for person in persons {
-        print_metrics(person);
+        person.print_metrics();
     }
 }
 
