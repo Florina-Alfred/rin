@@ -1,6 +1,6 @@
-use metrics_macros::PrintMetrics;
+use metrics_macros::Metrics;
 
-#[derive(PrintMetrics)]
+#[derive(Metrics)]
 struct Person {
     name: String,
     age: u8,
@@ -35,6 +35,6 @@ fn main() {
     let persons = vec![person1, person2];
 
     for person in persons {
-        person.print_metrics();
+        person.give_metrics();
     }
 }

@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Fields};
 
-#[proc_macro_derive(PrintMetrics)]
+#[proc_macro_derive(Metrics)]
 pub fn give_metrics_derive(input: TokenStream) -> TokenStream {
     // Parse the input as a Rust struct
     let input = parse_macro_input!(input as DeriveInput);
@@ -56,7 +56,7 @@ pub fn give_metrics_derive(input: TokenStream) -> TokenStream {
     // Generate the function for printing
     let expanded = quote! {
         impl #struct_name {
-            pub fn print(&self) {
+            pub fn give_metrics(&self) {
                 #(#field_prints)*
             }
         }
