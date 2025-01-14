@@ -4,14 +4,14 @@ use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Fields};
 
 #[proc_macro_derive(PrintMetrics)]
-pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
+pub fn give_metrics_derive(input: TokenStream) -> TokenStream {
     // Parse the input as a Rust struct
     let input = parse_macro_input!(input as DeriveInput);
 
     let struct_name = &input.ident;
     let fields = match input.data {
         syn::Data::Struct(ref s) => &s.fields,
-        _ => panic!("PrintMetrics can only be used on structs"),
+        _ => panic!("Metrics can only be used on structs"),
     };
 
     // Create the code to print metrics for the fields ending in "_metric"
@@ -56,7 +56,7 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
     // Generate the function for printing
     let expanded = quote! {
         impl #struct_name {
-            pub fn print_metrics(&self) {
+            pub fn print(&self) {
                 #(#field_prints)*
             }
         }
@@ -64,4 +64,3 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
-

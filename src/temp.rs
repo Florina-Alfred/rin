@@ -38,4 +38,3 @@ fn main() {
         person.print_metrics();
     }
 }
-
