@@ -247,8 +247,8 @@ pub async fn start_subscriber<T>(
             // check .collect_metrics() method and run if present
             span.in_scope(|| async {
                 f(msg.deser(&value));
-                // let metrics = msg.deser(&value).collect_metrics();
-                // println!("Metrics: ------------{:?}", metrics);
+                let metrics = msg.deser(&value).collect_metrics();
+                println!("Metrics: ------------{:?}", metrics);
             })
             .await;
         }

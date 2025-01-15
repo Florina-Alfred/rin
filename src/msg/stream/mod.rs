@@ -3,7 +3,7 @@ use metrics_macros::Metrics;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Metrics)]
+#[derive(Debug, Clone, Metrics, Default, Serialize, Deserialize)]
 pub struct Stream {
     pub start: Option<u32>,
     pub length: Option<u32>,
@@ -42,10 +42,10 @@ impl Message for Stream {
                 monotonic_counter.stream = self.num_metric,
                 "updating the Stream value",
             );
-            tracing::error!(
-                "..........in..next..........Metric: {:?}",
-                self.collect_metrics()
-            );
+            // tracing::error!(
+            //     "..........in..next..........Metric: {:?}",
+            //     self.collect_metrics()
+            // );
             Some(self)
         } else {
             None
