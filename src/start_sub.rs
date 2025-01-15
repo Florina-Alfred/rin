@@ -22,7 +22,12 @@ fn stream_callback(input: Stream) {
         input.start,
         input.num_metric
     );
-    tracing::info!("-----------Metric: {:?}", input.print_metrics());
+    if let Some(metrics) = input.collect_metrics() {
+        for (key, value) in metrics {
+            tracing::info!(key = value.as_str(), "Metric");
+            println!("-------outside------{}: {}", key, value);
+        }
+    }
     if input.num_metric == 2025 {
         tracing::warn!("Happy new year!");
     }

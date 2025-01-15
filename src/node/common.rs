@@ -23,28 +23,28 @@ use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub trait Message {
-    // async fn next(&mut self) -> Option<&mut Self>
-    // where
-    //     Self: Sized;
     async fn next(&mut self) -> Option<&mut Self>
     where
         Self: Sized,
     {
-        return Some(self);
+        Some(self)
     }
     fn ser(&self) -> String
     where
         Self: Serialize,
     {
-        let serialized = serde_json::to_string(&self).unwrap();
-        return serialized;
+        serde_json::to_string(&self).unwrap()
     }
     fn deser(&self, msg: &String) -> Self
     where
         Self: for<'de> Deserialize<'de> + Debug,
     {
-        let deserialized: Self = serde_json::from_str(&msg).unwrap();
-        return deserialized;
+        serde_json::from_str(&msg).unwrap()
+    }
+
+    // fn collect_metrics(&self) -> Option<Vec<(String, String)>>;
+    fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
+        None
     }
 }
 
@@ -103,7 +103,7 @@ fn resource() -> Resource {
     )
 }
 
-fn init_meter_provider() -> SdkMeterProvider {
+fn init_meteric_provider() -> SdkMeterProvider {
     let exporter = opentelemetry_otlp::MetricExporter::builder()
         .with_tonic()
         .with_temporality(opentelemetry_sdk::metrics::Temporality::default())
@@ -169,7 +169,7 @@ fn init_tracer_provider() -> TracerProvider {
 pub fn init_tracing_subscriber() -> OtelGuard {
     global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer_provider = init_tracer_provider();
-    let meter_provider = init_meter_provider();
+    let meter_provider = init_meteric_provider();
     let log_provider = init_log_provider();
 
     let tracer = tracer_provider.tracer("tracing-otel-subscriber");

@@ -14,8 +14,8 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
         _ => panic!("Metrics can only be used on structs"),
     };
 
-    // Create the code to print metrics for the fields ending in "_metric"
-    let field_prints = if let Fields::Named(fields) = fields {
+    // Create the code to collect metrics data for the fields ending in "_metric"
+    let field_data = if let Fields::Named(fields) = fields {
         fields.named.iter().filter_map(|field| {
             if let Some(field_name) = &field.ident {
                 if field_name.to_string().ends_with("_metric") {
@@ -27,19 +27,19 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
                             // Option handling
                             Some(quote! {
                                 if let Some(ref value) = &self.#field_name {
-                                    println!("{}: {:?}", #field_name_str, value);
+                                    data.push((#field_name_str.to_string(), format!("{:?}", value)));
                                 }
                             })
                         } else {
                             // Non-Option type handling
                             Some(quote! {
-                                println!("{}: {:?}", #field_name_str, self.#field_name);
+                                data.push((#field_name_str.to_string(), format!("{:?}", self.#field_name)));
                             })
                         }
                     } else {
                         // Non-Option type handling
                         Some(quote! {
-                            println!("{}: {:?}", #field_name_str, self.#field_name);
+                            data.push((#field_name_str.to_string(), format!("{:?}", self.#field_name)));
                         })
                     }
                 } else {
@@ -53,11 +53,13 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
         panic!("Named fields are required")
     };
 
-    // Generate the function for printing
+    // Generate the function for returning the metrics data
     let expanded = quote! {
         impl #struct_name {
-            pub fn print_metrics(&self) {
-                #(#field_prints)*
+            pub fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
+                let mut data = Vec::new();
+                #(#field_data)*
+                Some(data)
             }
         }
     };

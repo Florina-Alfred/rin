@@ -244,9 +244,13 @@ pub async fn start_subscriber<T>(
             let span = info_span!("Received data", payload = ?value);
             span.set_parent(parent_context);
 
-            span.in_scope(|| {
+            // check .collect_metrics() method and run if present
+            span.in_scope(|| async {
                 f(msg.deser(&value));
-            });
+                // let metrics = msg.deser(&value).collect_metrics();
+                // println!("Metrics: ------------{:?}", metrics);
+            })
+            .await;
         }
 
         if let Some(att) = sample.attachment() {
