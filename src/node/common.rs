@@ -59,6 +59,9 @@ pub trait Message {
 
     // fn collect_metrics(&self) -> Option<Vec<(String, String)>>;
     fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
+        // let mut metrics = Vec::new();
+        // metrics.push(("counter".to_string(), "1".to_string()));
+        // Some(metrics)
         None
     }
 }

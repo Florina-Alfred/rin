@@ -18,9 +18,10 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 #[tracing::instrument]
 fn stream_callback(input: Stream) {
     tracing::warn!(
-        "Stream callback:- Start: {:?} Num: {:?}",
+        "Stream callback:- Start: {:?} Num: {:?} with metrics: {:?}",
         input.start,
-        input.num_metric
+        input.num_metric,
+        input.collect_metrics()
     );
     // if let Some(metrics) = input.collect_metrics() {
     //     for (key, value) in metrics {
