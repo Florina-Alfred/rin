@@ -54,6 +54,7 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
         start: Some(0),
         length: Some(10),
         num_metric: 0,
+        prometheus_metric: common::Metric::Counter(0),
     }
 }
 

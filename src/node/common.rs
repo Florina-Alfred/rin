@@ -22,6 +22,21 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+#[allow(dead_code)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Metric<T: Default> {
+    Counter(T),
+    Gauge(T),
+    Histogram(T),
+    Summary(T),
+}
+
+impl<T: Default> Default for Metric<T> {
+    fn default() -> Self {
+        Metric::Counter(Default::default())
+    }
+}
+
 pub trait Message {
     async fn next(&mut self) -> Option<&mut Self>
     where

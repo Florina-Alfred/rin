@@ -1,4 +1,4 @@
-use crate::node::common::Message;
+use crate::node::common::{Message, Metric};
 use metrics_macros::Metrics;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -8,6 +8,7 @@ pub struct Stream {
     pub start: Option<u32>,
     pub length: Option<u32>,
     pub num_metric: u32,
+    pub prometheus_metric: Metric<u32>,
 }
 
 impl Stream {
@@ -18,12 +19,14 @@ impl Stream {
                 start: Some(start),
                 length: Some(length),
                 num_metric: start as u32,
+                prometheus_metric: Metric::Counter(0),
             }
         } else {
             Stream {
                 start: Some(0),
                 length: Some(10),
                 num_metric: 0,
+                prometheus_metric: Metric::Counter(0),
             }
         }
     }
