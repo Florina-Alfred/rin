@@ -36,6 +36,10 @@ name = "vp"
 path = "src/start_video_pub.rs"
 
 [[bin]]
+name = "vs"
+path = "src/start_video_sub.rs"
+
+[[bin]]
 name = "ws"
 path = "src/websocket.rs"
 
@@ -44,24 +48,20 @@ name = "cwb"
 path = "src/client_websocket.rs"
 
 [[bin]]
-name = "vs"
-path = "src/start_video_sub.rs"
-
-[[bin]]
 name = "temp"
 path = "src/temp.rs"
 
 
 [dependencies]
-clap = { version = "4.5.21", features = ["derive"] }
+clap = { version = "4.5.26", features = ["derive"] }
 # rand = "0.8.5"
 
-zenoh = "1.0.2"
+zenoh = "1.1.1"
 
-serde = "1.0.215"
-serde_json = "1.0.133"
+serde = "1.0.217"
+serde_json = "1.0.135"
 
-tokio = { version = "1.41.1", features = ["full"] }
+tokio = { version = "1.43.0", features = ["full"] }
 
 opentelemetry = { version = "0.27.1", features = ["metrics","logs"] }
 opentelemetry-otlp = { version = "0.27.0", features = ["default","http-json","http-proto","metrics", "logs","tonic"], default-features = false }

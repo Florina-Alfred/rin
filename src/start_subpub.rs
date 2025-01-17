@@ -6,17 +6,13 @@ use args::Args;
 use clap::Parser;
 use msg::stream::{MachineMessage, Stream, UserMessage};
 use node::common;
-use node::common::PropagationContext;
+// use node::common::PropagationContext;
 use tokio;
-use tracing_opentelemetry::OpenTelemetrySpanExt;
+// use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 #[allow(dead_code)]
 #[tracing::instrument]
 fn stream_modifier(input: Stream) -> UserMessage {
-    // println!(
-    // "Stream callback:- Start: {:?} Num: {:?}",
-    // input.start, input.num_metric
-    // );
     let output = UserMessage {
         number: input.num_metric.to_string(),
         value: format!("value {}", input.num_metric),
@@ -54,7 +50,6 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
         start: Some(0),
         length: Some(10),
         num_metric: 0,
-        prometheus_metric: common::Metric::Counter(0),
     }
 }
 
@@ -63,7 +58,6 @@ async fn main() {
     let args = Args::parse();
     let _guard = common::init_tracing_subscriber();
 
-    // info!("Starting subscriber");
     node::start_subscriber_publisher(
         "test_subscriber_publisher",
         args.output_key_expr.as_str(),

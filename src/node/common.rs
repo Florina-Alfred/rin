@@ -22,18 +22,9 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Metric<T: Default> {
-    Counter(T),
-    Gauge(T),
-    Histogram(T),
-    Summary(T),
-}
-
-impl<T: Default> Default for Metric<T> {
-    fn default() -> Self {
-        Metric::Counter(Default::default())
+pub trait PromMetric {
+    fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
+        None
     }
 }
 
@@ -55,14 +46,6 @@ pub trait Message {
         Self: for<'de> Deserialize<'de> + Debug,
     {
         serde_json::from_str(&msg).unwrap()
-    }
-
-    // fn collect_metrics(&self) -> Option<Vec<(String, String)>>;
-    fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
-        // let mut metrics = Vec::new();
-        // metrics.push(("counter".to_string(), "1".to_string()));
-        // Some(metrics)
-        None
     }
 }
 
@@ -98,12 +81,6 @@ impl DB {
         Self { conn }
     }
 }
-
-// impl Drop for DB {
-//     fn drop(&mut self) {
-//         println!("Dropping DB");
-//     }
-// }
 
 #[allow(dead_code)]
 fn print_type_of<T>(_: &T) {
@@ -289,12 +266,3 @@ impl Extractor for PropagationContext {
         self.0.keys().map(|k| k.as_ref()).collect()
     }
 }
-
-// #[tracing::instrument]
-// pub fn get_propagator() -> PropagationContext {
-//     global::get_text_map_propagator(|propagator| {
-//         let mut propagation_context = PropagationContext::empty();
-//         propagator.inject_context(&opentelemetry::Context::current(), &mut propagation_context);
-//         propagation_context
-//     })
-// }

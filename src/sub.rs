@@ -17,7 +17,7 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 fn stream_callback(input: Stream) {
     println!(
         "Stream callback:- Start: {:?} Num: {:?}",
-        input.start, input.num
+        input.start, input.num_metric
     );
     println!();
 }
@@ -66,7 +66,7 @@ async fn main() {
         let msg = subscriber.receive_msg().await.unwrap();
         println!(
             "Stream Received message:- Start: {:?} Num: {:?}",
-            msg.start, msg.num
+            msg.start, msg.num_metric
         );
     }
 

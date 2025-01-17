@@ -1,4 +1,4 @@
-use crate::node::common::{Message, Metric};
+use crate::node::common::{Message, PromMetric};
 use metrics_macros::Metrics;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -8,7 +8,6 @@ pub struct Stream {
     pub start: Option<u32>,
     pub length: Option<u32>,
     pub num_metric: u32,
-    pub prometheus_metric: Metric<u32>,
 }
 
 impl Stream {
@@ -19,14 +18,12 @@ impl Stream {
                 start: Some(start),
                 length: Some(length),
                 num_metric: start as u32,
-                prometheus_metric: Metric::Counter(0),
             }
         } else {
             Stream {
                 start: Some(0),
                 length: Some(10),
                 num_metric: 0,
-                prometheus_metric: Metric::Counter(0),
             }
         }
     }
@@ -36,13 +33,13 @@ impl Message for Stream {
     // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.num_metric += 2;
-        // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
         if (self.num_metric - self.start.unwrap()) < self.length.unwrap() {
             tracing::info!(
-                monotonic_counter.stream = self.num_metric,
+                monotonic_counter.stream_num = self.num_metric,
                 "updating the Stream value",
             );
             // tracing::error!(
@@ -56,7 +53,7 @@ impl Message for Stream {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Metrics)]
 pub struct UserMessage {
     pub number: String,
     pub value: String,
@@ -79,7 +76,7 @@ impl Message for UserMessage {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,

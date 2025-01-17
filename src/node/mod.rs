@@ -1,7 +1,7 @@
 pub mod common;
 
-use common::Message;
 use common::{spanned_message, unspanned_message};
+use common::{Message, PromMetric};
 use serde::Serialize;
 use serde_json::json;
 use std::fmt::Debug;
@@ -49,7 +49,7 @@ impl<'a> Publisher<'a> {
         })
     }
     #[tracing::instrument]
-    pub async fn publish(&self, message: impl Message + Debug + Serialize) {
+    pub async fn publish(&self, message: impl Message + Debug + Serialize + PromMetric) {
         common::logger(format!("Publishing message: {:?}", message).to_string());
         info!("Publishing data: {:?}", message);
         let buf = message.ser();
@@ -67,7 +67,7 @@ impl<'a> Publisher<'a> {
 pub async fn start_publisher(
     name: &str,
     key_expr: &str,
-    mut payload: impl Message + Debug + Serialize,
+    mut payload: impl Message + Debug + Serialize + PromMetric,
     attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -96,7 +96,6 @@ pub async fn start_publisher(
     common::logger(format!("{} ending data: {:?}", &name, &payload).to_string());
 
     loop {
-        // let buf = payload.ser();
         let span = info_span!("Sending data", payload = ?payload);
         info!("Sending data: {:?}", payload);
         let buf = spanned_message(payload.ser(), span);
@@ -145,7 +144,13 @@ impl<T> Subscriber<T> {
         endpoints: Vec<&str>,
     ) -> Result<Subscriber<T>, zenoh::Error>
     where
-        T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+        T: Default
+            + Message
+            + PromMetric
+            + Clone
+            + Debug
+            + Serialize
+            + for<'de> serde::Deserialize<'de>,
     {
         // zenoh::init_log_from_env_or("error");
 
@@ -170,7 +175,13 @@ impl<T> Subscriber<T> {
     #[tracing::instrument]
     pub async fn receive_msg(&self) -> Result<T, zenoh::Error>
     where
-        T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+        T: Default
+            + Message
+            + PromMetric
+            + Clone
+            + Debug
+            + Serialize
+            + for<'de> serde::Deserialize<'de>,
     {
         let sample = self.subscriber.recv_async().await.unwrap();
         let payload = sample
@@ -194,7 +205,13 @@ pub async fn start_subscriber<T>(
     endpoints: Vec<&str>,
     callback: Vec<fn(T)>,
 ) where
-    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    T: Default
+        + Message
+        + PromMetric
+        + Clone
+        + Debug
+        + Serialize
+        + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 
@@ -248,7 +265,7 @@ pub async fn start_subscriber<T>(
             span.in_scope(|| async {
                 f(msg.deser(&value));
                 let metrics = msg.deser(&value);
-                println!("Metrics: ------------{:?}", metrics);
+                println!("PromMetric: ------------{:?}", metrics.collect_metrics());
             })
             .await;
         }
@@ -277,8 +294,20 @@ pub async fn start_subscriber_publisher<T, S>(
     endpoints: Vec<&str>,
     maniputater: fn(T) -> S,
 ) where
-    T: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
-    S: Default + Message + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    T: Default
+        + Message
+        + PromMetric
+        + Clone
+        + Debug
+        + Serialize
+        + for<'de> serde::Deserialize<'de>,
+    S: Default
+        + Message
+        + PromMetric
+        + Clone
+        + Debug
+        + Serialize
+        + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 
@@ -427,13 +456,10 @@ use gstreamer::MessageView;
 use std::sync::{Arc, Mutex};
 #[allow(dead_code)]
 pub async fn start_video_sub(locaion: &str) {
-    // Initialize GStreamer
     gstreamer::init().expect("Failed to initialize GStreamer");
 
-    // Create a new GStreamer pipeline
     let pipeline = Pipeline::with_name("test-pipeline");
 
-    // Create the elements
     let rtspsrc = ElementFactory::make("rtspsrc")
         .name("rtspsrc")
         .property_from_str(
@@ -459,10 +485,8 @@ pub async fn start_video_sub(locaion: &str) {
         .build()
         .expect("Failed to create autovideosink element");
 
-    // Use Arc<Mutex> to allow shared access to videoconvert
     let videoconvert = Arc::new(Mutex::new(videoconvert));
 
-    // Add elements to the pipeline (ensure videoconvert is added)
     pipeline
         .add_many(&[
             &rtspsrc,
@@ -472,22 +496,18 @@ pub async fn start_video_sub(locaion: &str) {
         ])
         .expect("Failed to add elements to the pipeline");
 
-    // Connect to rtspsrc's pad-added signal dynamically
     rtspsrc.connect_pad_added({
         let decodebin = decodebin.clone();
         move |_, pad| {
-            // When a pad is added by rtspsrc, link it to decodebin
             let decodebin_pad = decodebin.static_pad("sink").unwrap();
             pad.link(&decodebin_pad)
                 .expect("Failed to link rtspsrc to decodebin");
         }
     });
 
-    // Handle the decodebin's dynamic pads to connect them to videoconvert
     decodebin.connect_pad_added({
         let videoconvert = Arc::clone(&videoconvert);
         move |_, pad| {
-            // When decodebin emits a pad, link it to videoconvert
             if let Some(sinkpad) = videoconvert.lock().unwrap().static_pad("sink") {
                 pad.link(&sinkpad)
                     .expect("Failed to link decodebin to videoconvert");
@@ -495,19 +515,16 @@ pub async fn start_video_sub(locaion: &str) {
         }
     });
 
-    // Link videoconvert to autovideosink after adding videoconvert to the pipeline
     videoconvert
         .lock()
         .unwrap()
         .link(&autovideosink)
         .expect("Failed to link videoconvert to autovideosink");
 
-    // Start playing the pipeline
     pipeline
         .set_state(State::Playing)
         .expect("Failed to set pipeline to Playing");
 
-    // Wait until an error or EOS (End Of Stream)
     let bus = pipeline.bus().unwrap();
     for msg in bus.iter_timed(gstreamer::ClockTime::NONE) {
         match msg.view() {
@@ -528,7 +545,6 @@ pub async fn start_video_sub(locaion: &str) {
         }
     }
 
-    // Clean up the pipeline
     pipeline
         .set_state(State::Null)
         .expect("Failed to set pipeline to Null");

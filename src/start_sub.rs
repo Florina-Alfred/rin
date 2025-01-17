@@ -18,17 +18,10 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 #[tracing::instrument]
 fn stream_callback(input: Stream) {
     tracing::warn!(
-        "Stream callback:- Start: {:?} Num: {:?} with metrics: {:?}",
+        "Stream callback:- Start: {:?} Num: {:?}",
         input.start,
         input.num_metric,
-        input.collect_metrics()
     );
-    // if let Some(metrics) = input.collect_metrics() {
-    //     for (key, value) in metrics {
-    //         tracing::info!(key = value.as_str(), "Metric");
-    //         println!("-------outside------{}: {}", key, value);
-    //     }
-    // }
     if input.num_metric == 2025 {
         tracing::warn!("Happy new year!");
     }

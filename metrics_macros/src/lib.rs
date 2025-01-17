@@ -53,10 +53,10 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
         panic!("Named fields are required")
     };
 
-    // Generate the function for returning the metrics data
+    // Generate the code for the Metrics trait and implementation for the struct
     let expanded = quote! {
-        impl #struct_name {
-            pub fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
+        impl PromMetric for #struct_name {
+            fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
                 let mut data = Vec::new();
                 #(#field_data)*
                 Some(data)
@@ -66,4 +66,3 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
 
     TokenStream::from(expanded)
 }
-

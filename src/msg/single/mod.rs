@@ -1,4 +1,4 @@
-use crate::node::common::Message;
+use crate::node::common::{Message, PromMetric};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -14,3 +14,4 @@ impl StringMessage {
 }
 
 impl Message for StringMessage {}
+impl PromMetric for StringMessage {}
