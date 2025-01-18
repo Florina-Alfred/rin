@@ -7,7 +7,9 @@ use std::fmt::Debug;
 pub struct Stream {
     pub start: Option<u32>,
     pub length: Option<u32>,
-    pub num_metric: u32,
+    pub stream_num_metric: u32,
+    pub stream_test_1_metric: u32,
+    pub stream_test_2_metric: u32,
 }
 
 impl Stream {
@@ -17,13 +19,17 @@ impl Stream {
             Stream {
                 start: Some(start),
                 length: Some(length),
-                num_metric: start as u32,
+                stream_num_metric: start as u32,
+                stream_test_1_metric: 0,
+                stream_test_2_metric: 0,
             }
         } else {
             Stream {
                 start: Some(0),
                 length: Some(10),
-                num_metric: 0,
+                stream_num_metric: 0,
+                stream_test_1_metric: 0,
+                stream_test_2_metric: 0,
             }
         }
     }
@@ -32,16 +38,18 @@ impl Stream {
 impl Message for Stream {
     // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
-        self.num_metric += 2;
+        self.stream_num_metric += 1;
+        self.stream_test_1_metric += 2;
+        self.stream_test_2_metric += self.stream_test_1_metric - self.stream_num_metric;
         // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
-        if (self.num_metric - self.start.unwrap()) < self.length.unwrap() {
+        if (self.stream_num_metric - self.start.unwrap()) < self.length.unwrap() {
             // tracing::info!(
-            //     monotonic_counter.stream_num = self.num_metric,
-            //     // monotonic_counter.stream_num = self.num_metric,
+            //     monotonic_counter.stream_num = self.stream_num_metric,
+            //     // monotonic_counter.stream_num = self.stream_num_metric,
             //     "updating the Stream value",
             // );
             // tracing::error!(

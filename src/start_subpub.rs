@@ -14,9 +14,9 @@ use tokio;
 #[tracing::instrument]
 fn stream_modifier(input: Stream) -> UserMessage {
     let output = UserMessage {
-        number: input.num_metric.to_string(),
-        value: format!("value {}", input.num_metric),
-        count: input.num_metric,
+        number: input.stream_num_metric.to_string(),
+        value: format!("value {}", input.stream_num_metric),
+        count: input.stream_num_metric,
         bytes: vec![0, 1, 2, 3, 4],
     };
     println!();
@@ -49,7 +49,9 @@ fn machine_message_modifier(input: MachineMessage) -> Stream {
     Stream {
         start: Some(0),
         length: Some(10),
-        num_metric: 0,
+        stream_num_metric: 0,
+        stream_test_1_metric: 0,
+        stream_test_2_metric: 0,
     }
 }
 

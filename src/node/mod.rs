@@ -262,7 +262,7 @@ pub async fn start_subscriber<T>(
             span.set_parent(parent_context);
 
             let message = msg.deser(&value);
-            // println!("PromMetric: ------------{:?}", message.collect_metrics());
+            println!("PromMetric: ------------{:?}", message.collect_metrics());
             match message.collect_metrics() {
                 Some(metrics) => {
                     for (key, value) in metrics {
@@ -275,15 +275,31 @@ pub async fn start_subscriber<T>(
                         let metric = opentelemetry::global::meter(&metric_name);
                         match value.parse::<u64>() {
                             Ok(value) => {
+                                let metrics_key_header = metrics_key.clone();
                                 let gauge = metric.u64_gauge(metrics_key).build();
                                 gauge.record(
                                     value as u64,
-                                    &[opentelemetry::KeyValue::new("key", "value")],
+                                    &[opentelemetry::KeyValue::new(
+                                        "rin_metric",
+                                        format!("{}", metrics_key_header),
+                                    )],
                                 );
                             }
                             Err(_) => {
+                                tracing::warn!(
+                                    "Failed to {} metric parse value to u64: {}",
+                                    metrics_key,
+                                    value
+                                );
+                                let metrics_key_header = metrics_key.clone();
                                 let gauge = metric.u64_gauge(metrics_key).build();
-                                gauge.record(0, &[opentelemetry::KeyValue::new("key", "value")]);
+                                gauge.record(
+                                    0,
+                                    &[opentelemetry::KeyValue::new(
+                                        "rin_metric",
+                                        format!("{}", metrics_key_header),
+                                    )],
+                                );
                             }
                         }
                     }
