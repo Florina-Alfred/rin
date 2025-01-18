@@ -33,15 +33,17 @@ impl Message for Stream {
     // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.num_metric += 2;
+        // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
         if (self.num_metric - self.start.unwrap()) < self.length.unwrap() {
-            tracing::info!(
-                monotonic_counter.stream_num = self.num_metric,
-                "updating the Stream value",
-            );
+            // tracing::info!(
+            //     monotonic_counter.stream_num = self.num_metric,
+            //     // monotonic_counter.stream_num = self.num_metric,
+            //     "updating the Stream value",
+            // );
             // tracing::error!(
             //     "..........in..next..........Metric: {:?}",
             //     self.collect_metrics()

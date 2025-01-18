@@ -261,13 +261,39 @@ pub async fn start_subscriber<T>(
             let span = info_span!("Received data", payload = ?value);
             span.set_parent(parent_context);
 
-            // check .collect_metrics() method and run if present
-            span.in_scope(|| async {
+            let message = msg.deser(&value);
+            // println!("PromMetric: ------------{:?}", message.collect_metrics());
+            match message.collect_metrics() {
+                Some(metrics) => {
+                    for (key, value) in metrics {
+                        // let _ = span.record(key.as_str(), &value.as_str());
+                        let metrics_key = key.clone();
+                        let metric_name = "rin";
+                        // let metric_name = format!("{}::{}", args::Args::parse().project, "zenoh")
+                        //     .as_str()
+                        //     .as_ref();
+                        let metric = opentelemetry::global::meter(&metric_name);
+                        match value.parse::<u64>() {
+                            Ok(value) => {
+                                let gauge = metric.u64_gauge(metrics_key).build();
+                                gauge.record(
+                                    value as u64,
+                                    &[opentelemetry::KeyValue::new("key", "value")],
+                                );
+                            }
+                            Err(_) => {
+                                let gauge = metric.u64_gauge(metrics_key).build();
+                                gauge.record(0, &[opentelemetry::KeyValue::new("key", "value")]);
+                            }
+                        }
+                    }
+                }
+                None => (),
+            }
+
+            span.in_scope(|| {
                 f(msg.deser(&value));
-                let metrics = msg.deser(&value);
-                println!("PromMetric: ------------{:?}", metrics.collect_metrics());
-            })
-            .await;
+            });
         }
 
         if let Some(att) = sample.attachment() {
@@ -454,6 +480,7 @@ pub async fn start_video_pub(device: &str, location: &str) {
 
 use gstreamer::MessageView;
 use std::sync::{Arc, Mutex};
+
 #[allow(dead_code)]
 pub async fn start_video_sub(locaion: &str) {
     gstreamer::init().expect("Failed to initialize GStreamer");

@@ -7,6 +7,10 @@ pub struct Args {
     #[arg(short, long, default_value_t = 0)]
     pub start: u32,
 
+    /// Project nane
+    #[arg(short, long, default_value = "test_project")]
+    pub project: String,
+
     /// Key expression for the publisher
     #[arg(short, long, default_value = "test_topic")]
     pub input_key_expr: String,

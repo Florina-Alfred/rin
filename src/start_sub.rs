@@ -17,7 +17,7 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 #[allow(dead_code)]
 #[tracing::instrument]
 fn stream_callback(input: Stream) {
-    tracing::warn!(
+    tracing::info!(
         "Stream callback:- Start: {:?} Num: {:?}",
         input.start,
         input.num_metric,
@@ -30,11 +30,11 @@ fn stream_callback(input: Stream) {
 #[allow(dead_code)]
 #[tracing::instrument]
 fn user_message_callback(input: UserMessage) {
-    tracing::warn!("User message callback");
-    tracing::warn!("Number: {}", input.number);
-    tracing::warn!("Value: {}", input.value);
-    tracing::warn!("Count: {}", input.count);
-    tracing::warn!("Bytes: {:?}", input.bytes);
+    tracing::info!("User message callback");
+    tracing::info!("Number: {}", input.number);
+    tracing::info!("Value: {}", input.value);
+    tracing::info!("Count: {}", input.count);
+    tracing::info!("Bytes: {:?}", input.bytes);
 }
 
 #[allow(dead_code)]
