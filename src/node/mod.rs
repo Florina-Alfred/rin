@@ -320,7 +320,7 @@ pub async fn start_subscriber<T>(
 }
 
 #[allow(dead_code)]
-#[tracing::instrument]
+// #[tracing::instrument]
 pub async fn start_subscriber_publisher<T, S>(
     name: &str,
     key_expr_sub: &str,
@@ -370,30 +370,40 @@ pub async fn start_subscriber_publisher<T, S>(
             .try_to_string()
             .unwrap_or_else(|e| e.to_string().into());
 
-        common::logger(
-            format!(
-                ">> [{:>16}] Received {} ('{}': '{}')\n",
-                &name,
-                sample.kind(),
-                sample.key_expr().as_str(),
-                payload
-            )
-            .to_string(),
-        );
+        // common::logger(
+        //     format!(
+        //         ">> [{:>16}] Received {} ('{}': '{}')\n",
+        //         &name,
+        //         sample.kind(),
+        //         sample.key_expr().as_str(),
+        //         payload
+        //     )
+        //     .to_string(),
+        // );
 
-        let value = payload.clone().to_string();
+        let value = payload.to_string();
+        // f(msg.deser(&value));
+        let (value, span) = unspanned_message(value.clone()).unwrap();
+        let parent_context = span.extract();
+        let span = info_span!("Received data to send again", payload = ?value);
+        info!("Received data to send again: {}", value);
+        span.set_parent(parent_context);
+
+        let _enter = span.enter();
         let manipulated_message = maniputater(msg.deser(&value));
+        drop(_enter);
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
             common::logger(format!("({})", att).to_string());
         }
 
-        let buf = manipulated_message.ser();
-        common::logger(format!(
-            "<< [{:>16}] Serialized data ('{}': '{:?}')...",
-            &name, &key_expr_pub, buf
-        ));
+        // common::logger(format!(
+        //     "<< [{:>16}] Serialized data ('{}': '{:?}')...",
+        //     &name, &key_expr_pub, buf
+        // ));
+        info!("Sending data again: {:?}", payload);
+        let buf = spanned_message(manipulated_message.ser(), span);
         publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)

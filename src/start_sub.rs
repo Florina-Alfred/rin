@@ -30,11 +30,7 @@ fn stream_callback(input: Stream) {
 #[allow(dead_code)]
 #[tracing::instrument]
 fn user_message_callback(input: UserMessage) {
-    tracing::info!("User message callback");
-    tracing::info!("Number: {}", input.number);
-    tracing::info!("Value: {}", input.value);
-    tracing::info!("Count: {}", input.count);
-    tracing::info!("Bytes: {:?}", input.bytes);
+    tracing::info!("User message callback:- {:?}", input);
 }
 
 #[allow(dead_code)]
@@ -58,12 +54,12 @@ async fn main() {
             // generic_callback,
             // generic_callback,
             // stream_callback,
-            // stream_callback,
+            stream_callback,
             // user_message_callback,
             // user_message_callback,
             // user_message_callback,
-            machine_message_callback,
-            machine_message_callback,
+            // machine_message_callback,
+            // machine_message_callback,
         ],
     )
     .await;

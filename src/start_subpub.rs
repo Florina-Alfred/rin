@@ -12,14 +12,14 @@ use tokio;
 
 #[allow(dead_code)]
 #[tracing::instrument]
-fn stream_modifier(input: Stream) -> UserMessage {
+fn stream_to_usermessage_modifier(input: Stream) -> UserMessage {
     let output = UserMessage {
         number: input.stream_num_metric.to_string(),
         value: format!("value {}", input.stream_num_metric),
         count: input.stream_num_metric,
         bytes: vec![0, 1, 2, 3, 4],
     };
-    println!();
+    tracing::info!("Stream to UserMessage modifier: {:?}", output);
     return output;
 }
 
@@ -66,7 +66,7 @@ async fn main() {
         args.input_key_expr.as_str(),
         args.mode.as_str(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),
-        stream_modifier,
+        stream_to_usermessage_modifier,
     )
     .await;
 }
