@@ -1,11 +1,11 @@
 pub mod common;
 
 use common::{spanned_message, unspanned_message};
-use common::{Message, PromMetric};
+use common::{Message, Metric};
 use serde::Serialize;
 use serde_json::json;
 use std::fmt::Debug;
-use tracing::{info, info_span};
+use tracing::{info, info_span, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use zenoh::bytes::Encoding;
 use zenoh::Config;
@@ -49,7 +49,7 @@ impl<'a> Publisher<'a> {
         })
     }
     #[tracing::instrument]
-    pub async fn publish(&self, message: impl Message + Debug + Serialize + PromMetric) {
+    pub async fn publish(&self, message: impl Message + Debug + Serialize + Metric) {
         common::logger(format!("Publishing message: {:?}", message).to_string());
         info!("Publishing data: {:?}", message);
         let buf = message.ser();
@@ -67,7 +67,7 @@ impl<'a> Publisher<'a> {
 pub async fn start_publisher(
     name: &str,
     key_expr: &str,
-    mut payload: impl Message + Debug + Serialize + PromMetric,
+    mut payload: impl Message + Debug + Serialize + Metric,
     attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -146,7 +146,7 @@ impl<T> Subscriber<T> {
     where
         T: Default
             + Message
-            + PromMetric
+            + Metric
             + Clone
             + Debug
             + Serialize
@@ -177,7 +177,7 @@ impl<T> Subscriber<T> {
     where
         T: Default
             + Message
-            + PromMetric
+            + Metric
             + Clone
             + Debug
             + Serialize
@@ -205,13 +205,7 @@ pub async fn start_subscriber<T>(
     endpoints: Vec<&str>,
     callback: Vec<fn(T)>,
 ) where
-    T: Default
-        + Message
-        + PromMetric
-        + Clone
-        + Debug
-        + Serialize
-        + for<'de> serde::Deserialize<'de>,
+    T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 
@@ -254,59 +248,58 @@ pub async fn start_subscriber<T>(
         info!("Received data: {}", payload);
 
         let value = payload.to_string();
-        for f in &callback {
-            // f(msg.deser(&value));
-            let (value, span) = unspanned_message(value.clone()).unwrap();
-            let parent_context = span.extract();
-            let span = info_span!("Received data", payload = ?value);
-            span.set_parent(parent_context);
+        // f(msg.deser(&value));
+        let (value, span) = unspanned_message(value.clone()).unwrap();
+        let parent_context = span.extract();
+        let span = info_span!("Received data", payload = ?value);
+        span.set_parent(parent_context);
 
-            let message = msg.deser(&value);
-            println!("PromMetric: ------------{:?}", message.collect_metrics());
-            match message.collect_metrics() {
-                Some(metrics) => {
-                    for (key, value) in metrics {
-                        // let _ = span.record(key.as_str(), &value.as_str());
-                        let metrics_key = key.clone();
-                        let metric_name = "rin";
-                        // let metric_name = format!("{}::{}", args::Args::parse().project, "zenoh")
-                        //     .as_str()
-                        //     .as_ref();
-                        let metric = opentelemetry::global::meter(&metric_name);
-                        match value.parse::<u64>() {
-                            Ok(value) => {
-                                let metrics_key_header = metrics_key.clone();
-                                let gauge = metric.u64_gauge(metrics_key).build();
-                                gauge.record(
-                                    value as u64,
-                                    &[opentelemetry::KeyValue::new(
-                                        "rin_metric",
-                                        format!("{}", metrics_key_header),
-                                    )],
-                                );
-                            }
-                            Err(_) => {
-                                tracing::warn!(
-                                    "Failed to {} metric parse value to u64: {}",
-                                    metrics_key,
-                                    value
-                                );
-                                let metrics_key_header = metrics_key.clone();
-                                let gauge = metric.u64_gauge(metrics_key).build();
-                                gauge.record(
-                                    0,
-                                    &[opentelemetry::KeyValue::new(
-                                        "rin_metric",
-                                        format!("{}", metrics_key_header),
-                                    )],
-                                );
-                            }
+        let message = msg.deser(&value);
+        info!("Metric data: {:?}", message.collect_metrics());
+        match message.collect_metrics() {
+            Some(metrics) => {
+                for (key, value) in metrics {
+                    // let _ = span.record(key.as_str(), &value.as_str());
+                    let metrics_key = key.clone();
+                    let metric_name = "rin";
+                    // let metric_name = format!("{}::{}", args::Args::parse().project, "zenoh")
+                    //     .as_str()
+                    //     .as_ref();
+                    let metric = opentelemetry::global::meter(&metric_name);
+                    match value.parse::<u64>() {
+                        Ok(value) => {
+                            let metrics_key_header = metrics_key.clone();
+                            let gauge = metric.u64_gauge(metrics_key).build();
+                            gauge.record(
+                                value as u64,
+                                &[opentelemetry::KeyValue::new(
+                                    "rin_metric",
+                                    format!("{}", metrics_key_header),
+                                )],
+                            );
+                        }
+                        Err(_) => {
+                            warn!(
+                                "Failed to {} metric parse value to u64: {}",
+                                metrics_key, value
+                            );
+                            let metrics_key_header = metrics_key.clone();
+                            let gauge = metric.u64_gauge(metrics_key).build();
+                            gauge.record(
+                                0,
+                                &[opentelemetry::KeyValue::new(
+                                    "rin_metric",
+                                    format!("{}", metrics_key_header),
+                                )],
+                            );
                         }
                     }
                 }
-                None => (),
             }
+            None => (),
+        }
 
+        for f in &callback {
             span.in_scope(|| {
                 f(msg.deser(&value));
             });
@@ -336,20 +329,8 @@ pub async fn start_subscriber_publisher<T, S>(
     endpoints: Vec<&str>,
     maniputater: fn(T) -> S,
 ) where
-    T: Default
-        + Message
-        + PromMetric
-        + Clone
-        + Debug
-        + Serialize
-        + for<'de> serde::Deserialize<'de>,
-    S: Default
-        + Message
-        + PromMetric
-        + Clone
-        + Debug
-        + Serialize
-        + for<'de> serde::Deserialize<'de>,
+    T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    S: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 

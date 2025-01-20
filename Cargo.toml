@@ -75,7 +75,7 @@ tracing-core = "0.1.33"
 tracing-log = "0.2.0"
 tracing-opentelemetry = "0.28.0"
 tracing-subscriber = {version="0.3.19", features=["env-filter","fmt","std", "registry"]}
-rusqlite = { version = "0.32.1", features = ["bundled"] }
+rusqlite = { version = "0.33.0", features = ["bundled"] }
 gstreamer = "0.23.4"
 axum = { version = "0.8.1", features = ["ws"] }
 tokio-tungstenite = "0.26.1"
@@ -85,5 +85,5 @@ axum-extra = { version = "0.10.0", features = ["typed-header"] }
 headers = "0.4.0"
 tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 
-metrics_macros = { path = "metrics_macros" }
+rin_macros = { path = "rin_macros" }
 

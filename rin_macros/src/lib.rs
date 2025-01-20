@@ -55,7 +55,7 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
 
     // Generate the code for the Metrics trait and implementation for the struct
     let expanded = quote! {
-        impl PromMetric for #struct_name {
+        impl Metric for #struct_name {
             fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
                 let mut data = Vec::new();
                 #(#field_data)*
@@ -64,5 +64,21 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
         }
     };
 
+    TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(Messages)]
+pub fn message_derive(input: TokenStream) -> TokenStream {
+    // Parse the input as a Rust struct
+    let input = parse_macro_input!(input as DeriveInput);
+
+    let struct_name = &input.ident;
+
+    // Generate the code to implement the Message trait for the struct
+    let expanded = quote! {
+        impl Message for #struct_name {}
+    };
+
+    // Return the generated implementation as a TokenStream
     TokenStream::from(expanded)
 }

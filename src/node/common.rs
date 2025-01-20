@@ -22,7 +22,7 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_opentelemetry::{MetricsLayer, OpenTelemetryLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-pub trait PromMetric {
+pub trait Metric {
     fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
         None
     }
@@ -33,6 +33,7 @@ pub trait Message {
     where
         Self: Sized,
     {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Some(self)
     }
     fn ser(&self) -> String

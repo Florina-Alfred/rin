@@ -1,5 +1,5 @@
-use crate::node::common::{Message, PromMetric};
-use metrics_macros::Metrics;
+use crate::node::common::{Message, Metric};
+use rin_macros::{Messages, Metrics};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -86,7 +86,7 @@ impl Message for UserMessage {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
+#[derive(Debug, Clone, Serialize, Deserialize, Metrics, Messages)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,
@@ -108,17 +108,17 @@ impl Default for MachineMessage {
     }
 }
 
-impl Message for MachineMessage {
-    // #[tracing::instrument]
-    async fn next(&mut self) -> Option<&mut Self> {
-        self.count += 1;
-        self.message = format!("message {}", self.count);
-        // std::thread::sleep(std::time::Duration::from_secs(1));
-        if self.count > 10 {
-            None
-        } else {
-            Some(self)
-        }
-        // Some(self)
-    }
-}
+// impl Message for MachineMessage {
+//     // #[tracing::instrument]
+//     async fn next(&mut self) -> Option<&mut Self> {
+//         self.count += 1;
+//         self.message = format!("message {}", self.count);
+//         // std::thread::sleep(std::time::Duration::from_secs(1));
+//         if self.count > 10 {
+//             None
+//         } else {
+//             Some(self)
+//         }
+//         // Some(self)
+//     }
+// }
