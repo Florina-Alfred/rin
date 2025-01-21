@@ -59,6 +59,12 @@ pub fn logger(message: String) {
     });
 }
 
+pub struct session_info {
+    pub zid: String,
+    pub routers_zid: Vec<String>,
+    pub peers_zid: Option<Vec<String>>,
+}
+
 pub struct DB {
     pub conn: Connection,
 }

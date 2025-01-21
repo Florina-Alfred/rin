@@ -1,5 +1,6 @@
 pub mod common;
 
+use common::session_info;
 use common::{spanned_message, unspanned_message};
 use common::{Message, Metric};
 use serde::Serialize;
@@ -8,6 +9,7 @@ use std::fmt::Debug;
 use tracing::{info, info_span, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use zenoh::bytes::Encoding;
+use zenoh::session::ZenohId;
 use zenoh::Config;
 
 #[allow(dead_code)]
@@ -82,6 +84,27 @@ pub async fn start_publisher(
 
     common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
+
+    let mut pub_session_info = session_info {
+        zid: format!("{}", session.info().zid().await),
+        routers_zid: Vec::new(),
+        peers_zid: None,
+    };
+
+    for zid in session.info().routers_zid().await {
+        pub_session_info.routers_zid.push(format!("{}", zid));
+    }
+
+    // let info = session.info();
+    // println!("zid: {}", info.zid().await);
+    // println!(
+    //     "routers zid: {:?}",
+    //     info.routers_zid().await.collect::<Vec<ZenohId>>()
+    // );
+    // println!(
+    //     "peers zid: {:?}",
+    //     info.peers_zid().await.collect::<Vec<ZenohId>>()
+    // );
 
     let db = common::DB::new();
     let _ = db.conn.execute(

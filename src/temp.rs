@@ -27,7 +27,7 @@ async fn main() {
         info.peers_zid().await.collect::<Vec<ZenohId>>()
     );
 
-    let subscriber = session.declare_subscriber("**").await.unwrap();
+    let subscriber = session.declare_subscriber("zids").await.unwrap();
 
     println!("Press CTRL-C to quit...");
     while let Ok(sample) = subscriber.recv_async().await {
@@ -50,5 +50,3 @@ async fn main() {
         println!();
     }
 }
-
-
