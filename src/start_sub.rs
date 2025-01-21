@@ -36,8 +36,7 @@ fn user_message_callback(input: UserMessage) {
 #[allow(dead_code)]
 #[tracing::instrument]
 fn machine_message_callback(input: MachineMessage) {
-    tracing::info!("Machine message callback");
-    tracing::info!("input: {:?}", input);
+    tracing::info!("Machine message callback:- {:?}", input);
 }
 
 #[tokio::main]
@@ -54,9 +53,9 @@ async fn main() {
             // generic_callback,
             // generic_callback,
             // stream_callback,
-            stream_callback,
+            // stream_callback,
             // user_message_callback,
-            // user_message_callback,
+            user_message_callback,
             // user_message_callback,
             // machine_message_callback,
             // machine_message_callback,

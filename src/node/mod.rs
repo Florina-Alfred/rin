@@ -389,9 +389,7 @@ pub async fn start_subscriber_publisher<T, S>(
         info!("Received data to send again: {}", value);
         span.set_parent(parent_context);
 
-        let _enter = span.enter();
-        let manipulated_message = maniputater(msg.deser(&value));
-        drop(_enter);
+        let manipulated_message = span.in_scope(|| maniputater(msg.deser(&value)));
 
         if let Some(att) = sample.attachment() {
             let att = att.try_to_string().unwrap_or_else(|e| e.to_string().into());
