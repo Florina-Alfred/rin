@@ -25,34 +25,27 @@ fn stream_to_usermessage_modifier(input: Stream) -> UserMessage {
 
 #[allow(dead_code)]
 #[tracing::instrument]
-fn user_message_modifier(input: UserMessage) -> MachineMessage {
-    println!("User message callback");
-    println!("Number: {}", input.number);
-    println!("Value: {}", input.value);
-    println!("Count: {}", input.count);
-    println!("Bytes: {:?}", input.bytes);
-    println!();
-
-    MachineMessage {
-        message: format!("message {}", input.number),
+fn usermessage_machinemachine_modifier(input: UserMessage) -> MachineMessage {
+    let output = MachineMessage {
+        message: format!("message {}", 0),
         count: input.count,
-    }
+    };
+    tracing::info!("User message callback:- {:?}", input);
+    return output;
 }
 
 #[allow(dead_code)]
 #[tracing::instrument]
-fn machine_message_modifier(input: MachineMessage) -> Stream {
-    println!("Machine message callback");
-    println!("Message: {}", input.message);
-    println!("Count: {}", input.count);
-    println!();
-    Stream {
-        start: Some(0),
-        length: Some(10),
-        stream_num_metric: 0,
+fn machinemessage_stream_modifier(input: MachineMessage) -> Stream {
+    let output = Stream {
+        start: Some(input.count),
+        length: Some(1),
+        stream_num_metric: input.count,
         stream_test_1_metric: 0,
         stream_test_2_metric: 0,
-    }
+    };
+    tracing::info!("Machine message callback:- {:?}", input);
+    return output;
 }
 
 #[tokio::main]
@@ -62,11 +55,13 @@ async fn main() {
 
     node::start_subscriber_publisher(
         "test_subscriber_publisher",
-        args.output_key_expr.as_str(),
         args.input_key_expr.as_str(),
+        args.output_key_expr.as_str(),
         args.mode.as_str(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),
-        stream_to_usermessage_modifier,
+        // stream_to_usermessage_modifier,
+        machinemessage_stream_modifier,
+        // usermessage_machinemachine_modifier,
     )
     .await;
 }

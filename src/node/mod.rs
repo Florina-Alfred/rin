@@ -1,6 +1,6 @@
 pub mod common;
 
-use common::session_info;
+use common::SessionInfo;
 use common::{spanned_message, unspanned_message};
 use common::{Message, Metric};
 use serde::Serialize;
@@ -9,7 +9,6 @@ use std::fmt::Debug;
 use tracing::{info, info_span, warn};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use zenoh::bytes::Encoding;
-use zenoh::session::ZenohId;
 use zenoh::Config;
 
 #[allow(dead_code)]
@@ -41,7 +40,11 @@ impl<'a> Publisher<'a> {
         common::logger("Opening session...".to_string());
         let session = zenoh::open(config).await.unwrap();
         let publisher = session.declare_publisher(key_expr).await.unwrap();
-        let token = session.liveliness().declare_token(key_expr).await.unwrap();
+        let token = session
+            .liveliness()
+            .declare_token(format!("{}/pub/{}", key_expr, session.info().zid().await).as_str())
+            .await
+            .unwrap();
         common::logger(format!("Publisher: {:?}", publisher).to_string());
         Ok(Publisher {
             session,
@@ -85,7 +88,7 @@ pub async fn start_publisher(
     common::logger(format!("Opening session for '{}'", &name).to_string());
     let session = zenoh::open(config).await.unwrap();
 
-    let mut pub_session_info = session_info {
+    let mut pub_session_info = SessionInfo {
         zid: format!("{}", session.info().zid().await),
         routers_zid: Vec::new(),
         peers_zid: None,
@@ -95,16 +98,9 @@ pub async fn start_publisher(
         pub_session_info.routers_zid.push(format!("{}", zid));
     }
 
-    // let info = session.info();
-    // println!("zid: {}", info.zid().await);
-    // println!(
-    //     "routers zid: {:?}",
-    //     info.routers_zid().await.collect::<Vec<ZenohId>>()
-    // );
-    // println!(
-    //     "peers zid: {:?}",
-    //     info.peers_zid().await.collect::<Vec<ZenohId>>()
-    // );
+    for zid in session.info().peers_zid().await {
+        pub_session_info.peers_zid = Some(vec![format!("{}", zid)]);
+    }
 
     let db = common::DB::new();
     let _ = db.conn.execute(
@@ -114,7 +110,13 @@ pub async fn start_publisher(
 
     common::logger(format!("Declaring {} Publisher on '{}'...", &name, &key_expr).to_string());
     let publisher = session.declare_publisher(key_expr).await.unwrap();
-    let token = session.liveliness().declare_token(key_expr).await.unwrap();
+    let token = session
+        .liveliness()
+        .declare_token(
+            format!("{}/pub/{}/{}", &key_expr, &name, session.info().zid().await).as_str(),
+        )
+        .await
+        .unwrap();
 
     common::logger(format!("{} ending data: {:?}", &name, &payload).to_string());
 
@@ -186,7 +188,11 @@ impl<T> Subscriber<T> {
         common::logger("Opening session...".to_string());
         let session = zenoh::open(config).await.unwrap();
         let subscriber = session.declare_subscriber(key_expr).await.unwrap();
-        let token = session.liveliness().declare_token(key_expr).await.unwrap();
+        let token = session
+            .liveliness()
+            .declare_token(format!("{}/sub/{}", key_expr, session.info().zid().await).as_str())
+            .await
+            .unwrap();
 
         Ok(Subscriber::<T> {
             session,
@@ -249,7 +255,13 @@ pub async fn start_subscriber<T>(
 
     common::logger(format!("Declaring {} Subscriber on '{}'...", &name, &key_expr).to_string());
     let subscriber = session.declare_subscriber(key_expr).await.unwrap();
-    let token = session.liveliness().declare_token(key_expr).await.unwrap();
+    let token = session
+        .liveliness()
+        .declare_token(
+            format!("{}/sub/{}/{}", &key_expr, &name, session.info().zid().await).as_str(),
+        )
+        .await
+        .unwrap();
 
     while let Ok(sample) = subscriber.recv_async().await {
         let msg = T::default();
@@ -376,13 +388,29 @@ pub async fn start_subscriber_publisher<T, S>(
     let subscriber = session.declare_subscriber(key_expr_sub).await.unwrap();
     let token_sub = session
         .liveliness()
-        .declare_token(key_expr_sub)
+        .declare_token(
+            format!(
+                "{}/sub/{}/{}",
+                &key_expr_sub,
+                &name,
+                session.info().zid().await
+            )
+            .as_str(),
+        )
         .await
         .unwrap();
     let publisher = session.declare_publisher(key_expr_pub).await.unwrap();
     let token_pub = session
         .liveliness()
-        .declare_token(key_expr_pub)
+        .declare_token(
+            format!(
+                "{}/pub/{}/{}",
+                &key_expr_pub,
+                &name,
+                session.info().zid().await
+            )
+            .as_str(),
+        )
         .await
         .unwrap();
 
@@ -408,8 +436,11 @@ pub async fn start_subscriber_publisher<T, S>(
         // f(msg.deser(&value));
         let (value, span) = unspanned_message(value.clone()).unwrap();
         let parent_context = span.extract();
-        let span = info_span!("Received data to send again", payload = ?value);
-        info!("Received data to send again: {}", value);
+        let span = info_span!("Received data to send again ", payload = ?value);
+        info!(
+            "Received data to send again: {} at topic {}",
+            value, key_expr_sub
+        );
         span.set_parent(parent_context);
 
         let manipulated_message = span.in_scope(|| maniputater(msg.deser(&value)));
@@ -423,7 +454,10 @@ pub async fn start_subscriber_publisher<T, S>(
         //     "<< [{:>16}] Serialized data ('{}': '{:?}')...",
         //     &name, &key_expr_pub, buf
         // ));
-        info!("Sending data again: {:?}", payload);
+        info!(
+            "Sending data again: {:?} at topic {}",
+            payload, key_expr_pub
+        );
         let buf = spanned_message(manipulated_message.ser(), span);
         publisher
             .put(buf)

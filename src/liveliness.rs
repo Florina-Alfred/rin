@@ -1,30 +1,31 @@
 use serde_json::json;
 use zenoh::sample::SampleKind;
-use zenoh::{key_expr::KeyExpr, Config};
+use zenoh::Config;
 
 #[tokio::main]
 async fn main() {
-    // Initiate logging
-    zenoh::init_log_from_env_or("error");
+    // initiate logging
 
-    // let key_expr: KeyExpr<'static> = "/demo/example/liveliness".parse().unwrap();
-    let key_expr: KeyExpr<'static> = "test_topic".parse().unwrap();
-    let timeout = std::time::Duration::from_secs(5);
-    let history = true;
     let mut config = Config::default();
-    let _ = config.insert_json5("mode", &json!("client").to_string());
+    config
+        .insert_json5("mode", &json!("peer").to_string())
+        .unwrap();
     let _ = config.insert_json5(
         "connect/endpoints",
-        &json!(vec!["tcp/0.0.0.0:7447"]).to_string(),
+        &json!(["tcp/0.0.0.0:7447"]).to_string(),
     );
 
     println!("Opening session...");
     let session = zenoh::open(config).await.unwrap();
 
-    println!("Sending Liveliness Query '{key_expr}'...");
+    let key_expr = "**";
+    let history = true;
+
+    println!("Declaring Liveliness Subscriber on '{}'...", &key_expr);
+
     let subscriber = session
         .liveliness()
-        .declare_subscriber(&key_expr)
+        .declare_subscriber(key_expr)
         .history(history)
         .await
         .unwrap();
