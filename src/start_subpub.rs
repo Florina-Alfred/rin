@@ -59,9 +59,9 @@ async fn main() {
         args.output_key_expr.as_str(),
         args.mode.as_str(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),
-        // stream_to_usermessage_modifier,
-        machinemessage_stream_modifier,
+        stream_to_usermessage_modifier,
         // usermessage_machinemachine_modifier,
+        // machinemessage_stream_modifier,
     )
     .await;
 }

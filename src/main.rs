@@ -125,6 +125,7 @@ async fn subscriber_loop(
     .unwrap();
 
     debug!("Subscriber: {}", name);
+    println!("Starting subscriber: {}", name);
     std::thread::sleep(std::time::Duration::from_secs(1));
     loop {
         let msg = subscriber.receive_msg().await.unwrap();

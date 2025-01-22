@@ -53,11 +53,11 @@ async fn main() {
             // generic_callback,
             // generic_callback,
             // stream_callback,
-            stream_callback,
+            // stream_callback,
             // user_message_callback,
             // user_message_callback,
             // user_message_callback,
-            // machine_message_callback,
+            machine_message_callback,
             // machine_message_callback,
         ],
     )
