@@ -135,6 +135,7 @@ fn init_meteric_provider() -> SdkMeterProvider {
     meter_provider
 }
 
+#[allow(dead_code)]
 fn init_log_provider() -> LoggerProvider {
     let log_exporter = opentelemetry_otlp::LogExporter::builder()
         .with_tonic()
@@ -169,6 +170,7 @@ fn init_tracer_provider() -> TracerProvider {
     trace_provide
 }
 
+#[allow(dead_code)]
 pub fn init_tracing_subscriber() -> OtelGuard {
     global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer_provider = init_tracer_provider();
