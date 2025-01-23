@@ -23,7 +23,7 @@ use zenoh::Config;
 #[derive(Clone)]
 struct AppState {
     conn_topic_addrs: Arc<Mutex<HashMap<String, Vec<SocketAddr>>>>,
-    conn_topic_subscribers: Arc<Mutex<HashMap<String, Vec<SplitSink<WebSocket, Message>>>>>,
+    conn_topic_sender: Arc<Mutex<HashMap<String, Vec<SplitSink<WebSocket, Message>>>>>,
 }
 
 #[tokio::main]
@@ -39,7 +39,7 @@ async fn main() {
 
     let state = AppState {
         conn_topic_addrs: Arc::new(Mutex::new(HashMap::new())),
-        conn_topic_subscribers: Arc::new(Mutex::new(HashMap::new())),
+        conn_topic_sender: Arc::new(Mutex::new(HashMap::new())),
     };
 
     let app = Router::new()
@@ -48,7 +48,6 @@ async fn main() {
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::default().include_headers(true)),
         )
-        // .with_ste(conn_topic_addrs);
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3212").await.unwrap();
@@ -66,7 +65,6 @@ async fn ws_handler(
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Path(topic_name): Path<String>,
-    // State(conn_topic_addrs): State<Arc<Mutex<HashMap<String, Vec<SocketAddr>>>>>,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
@@ -90,6 +88,13 @@ async fn ws_handler(
 
 async fn handle_socket(socket: WebSocket, who: SocketAddr, topic_name: String, state: AppState) {
     let (mut sender, _receiver) = socket.split();
+    // state
+    //     .conn_topic_sender
+    //     .lock()
+    //     .unwrap()
+    //     .entry(topic_name.clone())
+    //     .or_insert_with(Vec::new)
+    //     .push(sender);
 
     tracing::info!("Websocket context {who} created for topic {topic_name}");
 
@@ -120,6 +125,32 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, topic_name: String, s
 
         tracing::info!("[ {} ] {}:- {} ", who, topic_name, value);
 
+        // for sender in state
+        //     .conn_topic_sender
+        //     .lock()
+        //     .unwrap()
+        //     .get_mut(topic_name.as_str())
+        //     .unwrap()
+        // {
+        //     if sender.send(Text(format!("{value}").into())).is_err() {
+        //         let mut conn_topic_addrs_guard = state.conn_topic_addrs.lock().unwrap();
+        //         conn_topic_addrs_guard
+        //             .get_mut(topic_name.as_str())
+        //             .unwrap()
+        //             .retain(|x| *x != who);
+        //         if conn_topic_addrs_guard
+        //             .get(topic_name.as_str())
+        //             .unwrap()
+        //             .is_empty()
+        //         {
+        //             conn_topic_addrs_guard.remove(topic_name.as_str());
+        //         }
+        //         tracing::warn!("Removed {who} from topic {topic_name} connection list.");
+        //         tracing::warn!("Current connections: {:?}", conn_topic_addrs_guard);
+        //         break;
+        //     }
+        // }
+
         if sender.send(Text(format!("{value}").into())).await.is_err() {
             let mut conn_topic_addrs_guard = state.conn_topic_addrs.lock().unwrap();
             conn_topic_addrs_guard
@@ -139,4 +170,3 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, topic_name: String, s
         }
     }
 }
-
