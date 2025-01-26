@@ -16,14 +16,15 @@ use node::common::unspanned_message;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use tokio::sync::broadcast::{Receiver, Sender};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use zenoh::Config;
 
 #[derive(Clone)]
 struct AppState {
-    conn_topic_addrs: Arc<Mutex<HashMap<String, Vec<SocketAddr>>>>,
-    conn_topic_sender: Arc<Mutex<HashMap<String, Vec<SplitSink<WebSocket, Message>>>>>,
+    conn_topic_channels: Arc<Mutex<HashMap<String, Vec<Sender<String>>>>>,
+    // conn_topic_channels: Arc<Mutex<HashMap<String, Vec<String>>>>,
 }
 
 #[tokio::main]
@@ -37,18 +38,19 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let state = AppState {
-        conn_topic_addrs: Arc::new(Mutex::new(HashMap::new())),
-        conn_topic_sender: Arc::new(Mutex::new(HashMap::new())),
-    };
+    // let mut state = AppState {
+    //     conn_topic_channels: Arc::new(Mutex::new(HashMap::new())),
+    // };
+    let state = Arc::new(Mutex::new(HashMap::new()));
 
+    let state_clone = Arc::clone(&state);
     let app = Router::new()
         .route("/ws/{topic_name}", any(ws_handler))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::default().include_headers(true)),
         )
-        .with_state(state);
+        .with_state(Arc::clone(&state_clone));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3212").await.unwrap();
     tracing::info!("listening on {}", listener.local_addr().unwrap());
@@ -65,7 +67,7 @@ async fn ws_handler(
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Path(topic_name): Path<String>,
-    State(state): State<AppState>,
+    State(state): State<Arc<Mutex<HashMap<String, Vec<Sender<String>>>>>>,
 ) -> impl IntoResponse {
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
@@ -74,30 +76,35 @@ async fn ws_handler(
     };
     tracing::info!("`{user_agent}` at {addr} connected for topic {topic_name}");
 
-    let mut conn_topic_addrs_guard = state.conn_topic_addrs.lock().unwrap();
-    conn_topic_addrs_guard
-        .entry(topic_name.clone())
-        .or_insert_with(Vec::new)
-        .push(addr);
-    tracing::info!("Added {addr} to topic {topic_name} connection list.");
-    tracing::warn!("Current connections: {:?}", conn_topic_addrs_guard);
-    drop(conn_topic_addrs_guard);
+    let mut state_guard = state.lock().unwrap();
+    let (tx, rx) = tokio::sync::broadcast::channel::<String>(10);
+    if !state_guard.contains_key(&topic_name) {
+        tracing::error!("Creating topic {topic_name} in state");
+        state_guard.insert(topic_name.clone(), vec![tx.clone()]);
+        drop(state_guard);
+        let topic_name_clone = topic_name.clone();
+        tokio::spawn(async move {
+            // subscribe_to_topic(topic_name_clone, tx).await;
+            subscribe_to_topic(topic_name_clone, Arc::clone(&state)).await;
+        });
+    } else {
+        state_guard.get_mut(&topic_name).unwrap().push(tx.clone());
+        drop(state_guard);
+        // let topic_name_clone = topic_name.clone();
+        // tokio::spawn(async move {
+        //     subscribe_to_topic(topic_name_clone, tx).await;
+        // });
+    }
 
-    ws.on_upgrade(move |socket| handle_socket(socket, addr, topic_name, state.clone()))
+    ws.on_upgrade(move |socket| handle_socket(socket, addr, topic_name, rx))
 }
 
-async fn handle_socket(socket: WebSocket, who: SocketAddr, topic_name: String, state: AppState) {
-    let (mut sender, _receiver) = socket.split();
-    // state
-    //     .conn_topic_sender
-    //     .lock()
-    //     .unwrap()
-    //     .entry(topic_name.clone())
-    //     .or_insert_with(Vec::new)
-    //     .push(sender);
-
-    tracing::info!("Websocket context {who} created for topic {topic_name}");
-
+// async fn subscribe_to_topic(topic_name: String, tx: Sender<String>) {
+async fn subscribe_to_topic(
+    topic_name: String,
+    state: Arc<Mutex<HashMap<String, Vec<Sender<String>>>>>,
+) {
+    tracing::error!("Launching a new task to subscribe to topic {topic_name}");
     let mut config = Config::default();
     config
         .insert_json5("mode", &serde_json::json!("client").to_string())
@@ -123,50 +130,36 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, topic_name: String, s
         let value = payload.to_string();
         let (value, _) = unspanned_message(value.clone()).unwrap();
 
-        tracing::info!("[ {} ] {}:- {} ", who, topic_name, value);
-
-        // for sender in state
-        //     .conn_topic_sender
-        //     .lock()
-        //     .unwrap()
-        //     .get_mut(topic_name.as_str())
-        //     .unwrap()
-        // {
-        //     if sender.send(Text(format!("{value}").into())).is_err() {
-        //         let mut conn_topic_addrs_guard = state.conn_topic_addrs.lock().unwrap();
-        //         conn_topic_addrs_guard
-        //             .get_mut(topic_name.as_str())
-        //             .unwrap()
-        //             .retain(|x| *x != who);
-        //         if conn_topic_addrs_guard
-        //             .get(topic_name.as_str())
-        //             .unwrap()
-        //             .is_empty()
-        //         {
-        //             conn_topic_addrs_guard.remove(topic_name.as_str());
-        //         }
-        //         tracing::warn!("Removed {who} from topic {topic_name} connection list.");
-        //         tracing::warn!("Current connections: {:?}", conn_topic_addrs_guard);
-        //         break;
-        //     }
-        // }
-
-        if sender.send(Text(format!("{value}").into())).await.is_err() {
-            let mut conn_topic_addrs_guard = state.conn_topic_addrs.lock().unwrap();
-            conn_topic_addrs_guard
-                .get_mut(topic_name.as_str())
-                .unwrap()
-                .retain(|x| *x != who);
-            if conn_topic_addrs_guard
-                .get(topic_name.as_str())
-                .unwrap()
-                .is_empty()
-            {
-                conn_topic_addrs_guard.remove(topic_name.as_str());
+        tracing::info!("------------{}:- {} ", topic_name, value);
+        // tx.send(value).unwrap();
+        let state_guard = state.lock().unwrap();
+        if let Some(channels) = state_guard.get(&topic_name) {
+            for channel in channels {
+                channel.send(value.clone()).unwrap();
             }
-            tracing::warn!("Removed {who} from topic {topic_name} connection list.");
-            tracing::warn!("Current connections: {:?}", conn_topic_addrs_guard);
-            break;
+        }
+        drop(state_guard);
+    }
+}
+
+async fn handle_socket(
+    socket: WebSocket,
+    who: SocketAddr,
+    topic_name: String,
+    mut rx: Receiver<String>,
+) {
+    let (mut sender, _receiver) = socket.split();
+
+    tracing::info!("Websocket context {who} created for topic {topic_name}");
+
+    while let Ok(value) = rx.recv().await {
+        tracing::info!("Sending message to {who} for topic {topic_name}");
+        match sender.send(Text(value.into())).await {
+            Ok(_) => {}
+            Err(e) => {
+                tracing::warn!("Receiver socket dropped for topic {topic_name}: {e}");
+                break;
+            }
         }
     }
 }
