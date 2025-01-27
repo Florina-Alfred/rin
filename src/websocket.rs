@@ -114,39 +114,44 @@ async fn subscribe_to_topic(
         let value = payload.to_string();
         let (value, _) = unspanned_message(value.clone()).unwrap();
 
-        tracing::info!("{}:- {} ", topic_name, value);
+        tracing::info!("[ {:10} ] received :- {} ", topic_name, value);
         let mut state_guard = state.lock().unwrap();
         if let Some(channels) = state_guard.get_mut(&topic_name) {
-            // Collect all failed addresses
             let mut failed_addresses = Vec::new();
 
-            // Attempt to send the message to each connected client
             for (addr, channel) in channels.iter_mut() {
                 match channel.send(value.clone()) {
                     Ok(_) => {
-                        println!("Sent {value} to {addr}");
+                        tracing::info!("Senting {value} to {addr}");
                     }
                     Err(e) => {
-                        tracing::error!("Sending message to {addr} failed: {e}");
+                        tracing::warn!("Sending message to {addr} failed: {e}");
                         failed_addresses.push(*addr); // Track the failed address
                     }
                 }
             }
 
-            // Remove clients that failed to receive the message
             if !failed_addresses.is_empty() {
                 channels.retain(|(addr, _)| !failed_addresses.contains(addr));
-                tracing::warn!(
+                tracing::debug!(
                     "Removed failed clients for topic {topic_name}: {:?}",
                     failed_addresses
                 );
-                tracing::error!("Channels: {:?}", channels);
-                break;
+                tracing::warn!(
+                    "Current channels for the topic {}: {:?}",
+                    topic_name,
+                    channels
+                );
+                if channels.is_empty() {
+                    state_guard.remove(&topic_name);
+                    tracing::debug!("Removed topic {topic_name} from state");
+                    break;
+                }
             }
         }
         drop(state_guard);
     }
-    println!("Exiting loop");
+    tracing::warn!("Exiting receive thread");
 }
 
 async fn handle_socket(
@@ -169,5 +174,5 @@ async fn handle_socket(
             }
         }
     }
-    println!("Exiting loop");
+    // tracing::warn!("Exiting socket sending loop");
 }
