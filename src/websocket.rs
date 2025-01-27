@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast::{Receiver, Sender};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use zenoh::sample::SampleKind;
 use zenoh::Config;
 
 #[tokio::main]
@@ -32,7 +33,8 @@ async fn main() {
 
     let state_clone = Arc::clone(&state);
     let app = Router::new()
-        .route("/ws/{topic_name}", any(ws_handler))
+        .route("/ws/sub/{topic_name}", any(ws_handler))
+        .route("/ws/live", any(live_handler))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::default().include_headers(true)),
@@ -47,6 +49,77 @@ async fn main() {
     )
     .await
     .unwrap();
+}
+
+async fn live_handler(
+    ws: WebSocketUpgrade,
+    user_agent: Option<TypedHeader<headers::UserAgent>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+    println!("`{:?}` at {:?} connected for liveliness", user_agent, addr);
+    let mut config = Config::default();
+    config
+        .insert_json5("mode", &serde_json::json!("client").to_string())
+        .unwrap();
+
+    let _ = config.insert_json5(
+        "connect/endpoints",
+        &serde_json::json!(vec!["tcp/0.0.0.0:7447"]).to_string(),
+    );
+
+    ws.on_upgrade(move |socket| live_socket(config, socket))
+}
+
+async fn live_socket(config: Config, socket: WebSocket) {
+    let session = zenoh::open(config).await.unwrap();
+    let key_expr = "**";
+    let history = true;
+    let (mut sender, _receiver) = socket.split();
+
+    #[allow(dead_code)]
+    #[derive(Debug)]
+    struct LivelinessInfo {
+        type_node: String,
+        key_expr: String,
+    }
+
+    let subscriber = session
+        .liveliness()
+        .declare_subscriber(key_expr)
+        .history(history)
+        .await
+        .unwrap();
+
+    while let Ok(sample) = subscriber.recv_async().await {
+        let mut info = LivelinessInfo {
+            type_node: "".to_string(),
+            key_expr: sample.key_expr().as_str().to_string(),
+        };
+
+        match sample.kind() {
+            SampleKind::Put => {
+                tracing::info!(
+                    ">> [LivelinessSubscriber] New alive token ('{}')",
+                    sample.key_expr().as_str()
+                );
+                info.type_node = "Put".to_string();
+            }
+            SampleKind::Delete => {
+                tracing::info!(
+                    ">> [LivelinessSubscriber] Dropped token ('{}')",
+                    sample.key_expr().as_str()
+                );
+                info.type_node = "Delete".to_string();
+            }
+        }
+        match sender.send(Text(format!("{:?}", info).into())).await {
+            Ok(_) => {}
+            Err(e) => {
+                tracing::warn!("Receiver socket handle dropped for liveliness: {e}");
+                break;
+            }
+        }
+    }
 }
 
 async fn ws_handler(
@@ -114,7 +187,7 @@ async fn subscribe_to_topic(
         let value = payload.to_string();
         let (value, _) = unspanned_message(value.clone()).unwrap();
 
-        tracing::info!("[ {:10} ] received :- {} ", topic_name, value);
+        tracing::info!("[ {:-^15} ] received :- {} ", topic_name, value);
         let mut state_guard = state.lock().unwrap();
         if let Some(channels) = state_guard.get_mut(&topic_name) {
             let mut failed_addresses = Vec::new();
