@@ -1,37 +1,37 @@
-use tokio::sync::broadcast;
+use prost::Message;
+use std::io::Cursor;
 
-#[tokio::main]
-async fn main() {
-    let (tx, mut rx1) = broadcast::channel(16);
+pub mod report {
+    include!(concat!(env!("OUT_DIR"), "/report.rs"));
+}
 
-    tokio::spawn(async move {
-        for i in 1..=5 {
-            // tx.send(i).unwrap();
-            match tx.send(i) {
-                Ok(_) => {
-                    println!("Sent {}", i);
-                }
-                Err(e) => {
-                    println!("sender Error: {}", e);
-                }
-            }
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-        }
-        println!("Sender done");
-    });
+pub fn create_input_request(name: String) -> report::InputRequest {
+    let mut input_request = report::InputRequest::default();
+    input_request.name = name;
+    input_request
+}
 
-    loop {
-        // let msg = rx1.recv().await.unwrap();
-        match rx1.recv().await {
-            Ok(msg) => {
-                println!("GOT = {}", msg);
-            }
-            Err(e) => {
-                println!("receiver Error: {}", e);
-                break;
-            }
-        }
-    }
-    println!("Exiting loop");
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+pub fn serialize_report(input: &report::InputRequest) -> Vec<u8> {
+    let mut buf = Vec::new();
+    buf.reserve(input.encoded_len());
+    input.encode(&mut buf).unwrap();
+    buf
+}
+
+pub fn deserialize_report(buf: &[u8]) -> Result<report::InputRequest, prost::DecodeError> {
+    report::InputRequest::decode(&mut Cursor::new(buf))
+}
+
+fn main() -> Result<(), prost::DecodeError> {
+    let request = String::from("Hello, World!");
+
+    let report_request = create_input_request(request);
+    let request_vector = serialize_report(&report_request);
+
+    let request_deserialized_result = match deserialize_report(&request_vector) {
+        Ok(request_deserialized_result) => request_deserialized_result,
+        Err(e) => return Err(e),
+    };
+    println!("{:#?}", request_deserialized_result);
+    Ok(())
 }

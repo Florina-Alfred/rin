@@ -5,9 +5,8 @@ mod node;
 use args::Args;
 use clap::Parser;
 #[allow(unused_imports)]
-use msg::stream::{MachineMessage, Stream, UserMessage};
+use msg::stream::{MachineMessage, SimpleMessage, UserMessage};
 use tokio;
-// use tracing::info;
 
 #[tokio::main]
 async fn main() {
@@ -32,7 +31,7 @@ async fn main() {
     .await
     .unwrap();
 
-    let pub_msg_struct = Stream::new(Some(args.start), Some(0));
+    let pub_msg_struct = SimpleMessage::new(Some(args.start), Some(0));
     println!("-------Current Message: {:?}", pub_msg_struct);
     for _ in 0..3 {
         publisher.publish(pub_msg_struct.clone()).await;

@@ -4,14 +4,14 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::stream::{MachineMessage, Stream, UserMessage};
+use msg::stream::{MachineMessage, SimpleMessage, UserMessage};
 use tokio;
 use tracing::info;
 
 #[allow(dead_code)]
-fn stream_modifier(input: Stream) -> UserMessage {
+fn stream_modifier(input: SimpleMessage) -> UserMessage {
     // println!(
-    // "Stream callback:- Start: {:?} Num: {:?}",
+    // "SimpleMessage callback:- Start: {:?} Num: {:?}",
     // input.start, input.num
     // );
     let output = UserMessage {
@@ -40,12 +40,12 @@ fn user_message_modifier(input: UserMessage) -> MachineMessage {
 }
 
 #[allow(dead_code)]
-fn machine_message_modifier(input: MachineMessage) -> Stream {
+fn machine_message_modifier(input: MachineMessage) -> SimpleMessage {
     println!("Machine message callback");
     println!("Message: {}", input.message);
     println!("Count: {}", input.count);
     println!();
-    Stream {
+    SimpleMessage {
         start: Some(0),
         length: Some(10),
         num: 0,

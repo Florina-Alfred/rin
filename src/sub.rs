@@ -4,9 +4,8 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::stream::{MachineMessage, Stream, UserMessage};
+use msg::stream::{MachineMessage, SimpleMessage, UserMessage};
 use tokio;
-use tracing::info;
 
 #[allow(dead_code)]
 fn generic_callback<T: std::fmt::Debug>(input: T) {
@@ -14,10 +13,10 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 }
 
 #[allow(dead_code)]
-fn stream_callback(input: Stream) {
+fn stream_callback(input: SimpleMessage) {
     println!(
-        "Stream callback:- Start: {:?} Num: {:?}",
-        input.start, input.num_metric
+        "SimpleMessage callback:- Start: {:?} Num: {:?}",
+        input.start, input.stream_num_metric
     );
     println!();
 }
@@ -57,7 +56,7 @@ async fn main() {
     let subscriber = node::Subscriber::new(
         args.output_key_expr.as_str(),
         args.mode.as_str(),
-        Stream::default(),
+        SimpleMessage::default(),
         args.endpoints.iter().map(|x| x.as_str()).collect(),
     )
     .await
@@ -65,8 +64,8 @@ async fn main() {
     for _ in 0..3 {
         let msg = subscriber.receive_msg().await.unwrap();
         println!(
-            "Stream Received message:- Start: {:?} Num: {:?}",
-            msg.start, msg.num_metric
+            "SimpleMessage Received message:- Start: {:?} Num: {:?}",
+            msg.start, msg.stream_num_metric
         );
     }
 

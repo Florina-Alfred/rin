@@ -4,7 +4,7 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::stream::{MachineMessage, Stream, UserMessage};
+use msg::stream::{MachineMessage, SimpleMessage, UserMessage};
 use node::common;
 // use node::common::PropagationContext;
 use tokio;
@@ -12,14 +12,14 @@ use tokio;
 
 #[allow(dead_code)]
 #[tracing::instrument]
-fn stream_to_usermessage_modifier(input: Stream) -> UserMessage {
+fn stream_to_usermessage_modifier(input: SimpleMessage) -> UserMessage {
     let output = UserMessage {
         number: input.stream_num_metric.to_string(),
         value: format!("value {}", input.stream_num_metric),
         count: input.stream_num_metric,
         bytes: vec![0, 1, 2, 3, 4],
     };
-    tracing::info!("Stream to UserMessage modifier: {:?}", output);
+    tracing::info!("SimpleMessage to UserMessage modifier: {:?}", output);
     return output;
 }
 
@@ -36,8 +36,8 @@ fn usermessage_machinemachine_modifier(input: UserMessage) -> MachineMessage {
 
 #[allow(dead_code)]
 #[tracing::instrument]
-fn machinemessage_stream_modifier(input: MachineMessage) -> Stream {
-    let output = Stream {
+fn machinemessage_stream_modifier(input: MachineMessage) -> SimpleMessage {
+    let output = SimpleMessage {
         start: Some(input.count),
         length: Some(1),
         stream_num_metric: input.count,

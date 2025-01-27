@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, Metrics, Default, Serialize, Deserialize)]
-pub struct Stream {
+pub struct SimpleMessage {
     pub start: Option<u32>,
     pub length: Option<u32>,
     pub stream_num_metric: u32,
@@ -12,11 +12,11 @@ pub struct Stream {
     pub stream_test_2_metric: u32,
 }
 
-impl Stream {
+impl SimpleMessage {
     #[allow(dead_code)]
     pub fn new(start: Option<u32>, length: Option<u32>) -> Self {
         if let (Some(start), Some(length)) = (start, length) {
-            Stream {
+            SimpleMessage {
                 start: Some(start),
                 length: Some(length),
                 stream_num_metric: start as u32,
@@ -24,7 +24,7 @@ impl Stream {
                 stream_test_2_metric: 0,
             }
         } else {
-            Stream {
+            SimpleMessage {
                 start: Some(0),
                 length: Some(10),
                 stream_num_metric: 0,
@@ -35,7 +35,7 @@ impl Stream {
     }
 }
 
-impl Message for Stream {
+impl Message for SimpleMessage {
     // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
         self.stream_num_metric += 1;
@@ -50,7 +50,7 @@ impl Message for Stream {
             // tracing::info!(
             //     monotonic_counter.stream_num = self.stream_num_metric,
             //     // monotonic_counter.stream_num = self.stream_num_metric,
-            //     "updating the Stream value",
+            //     "updating the SimpleMessage value",
             // );
             // tracing::error!(
             //     "..........in..next..........Metric: {:?}",

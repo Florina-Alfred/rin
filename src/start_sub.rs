@@ -4,7 +4,7 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::stream::{MachineMessage, Stream, UserMessage};
+use msg::stream::{MachineMessage, SimpleMessage, UserMessage};
 use node::common;
 use tokio;
 
@@ -16,9 +16,9 @@ fn generic_callback<T: std::fmt::Debug>(input: T) {
 
 #[allow(dead_code)]
 #[tracing::instrument]
-fn stream_callback(input: Stream) {
+fn stream_callback(input: SimpleMessage) {
     tracing::info!(
-        "Stream callback:- Start: {:?} Num: {:?}",
+        "SimpleMessage callback:- Start: {:?} Num: {:?}",
         input.start,
         input.stream_num_metric,
     );

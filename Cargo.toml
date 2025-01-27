@@ -53,13 +53,13 @@ path = "src/temp.rs"
 
 
 [dependencies]
-clap = { version = "4.5.26", features = ["derive"] }
+clap = { version = "4.5.27", features = ["derive"] }
 # rand = "0.8.5"
 
 zenoh = "1.1.1"
 
 serde = "1.0.217"
-serde_json = "1.0.135"
+serde_json = "1.0.137"
 
 tokio = { version = "1.43.0", features = ["full"] }
 
@@ -86,4 +86,8 @@ headers = "0.4.0"
 tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 
 rin_macros = { path = "rin_macros" }
+prost = "0.13.4"
+prost-types = "0.13.4"
 
+[build-dependencies]
+prost-build = { version = "0.13.4" }
