@@ -3,29 +3,35 @@ use tokio::sync::broadcast;
 #[tokio::main]
 async fn main() {
     let (tx, mut rx1) = broadcast::channel(16);
-    let mut rx2 = tx.subscribe();
-    let tx_clone = tx.clone();
 
     tokio::spawn(async move {
-        println!("rx1: {:?}", rx1.recv().await);
-        println!("rx1: {:?}", rx1.recv().await);
-        println!("rx1: {:?}", rx1.recv().await);
-        println!("rx1: {:?}", rx1.recv().await);
+        for i in 1..=5 {
+            // tx.send(i).unwrap();
+            match tx.send(i) {
+                Ok(_) => {
+                    println!("Sent {}", i);
+                }
+                Err(e) => {
+                    println!("sender Error: {}", e);
+                }
+            }
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+        println!("Sender done");
     });
 
-    tokio::spawn(async move {
-        println!("rx2: {:?}", rx2.recv().await);
-        println!("rx2: {:?}", rx2.recv().await);
-        println!("rx2: {:?}", rx2.recv().await);
-        println!("rx2: {:?}", rx2.recv().await);
-    });
-
-    tx.send(10).unwrap();
-    tx.send(20).unwrap();
-    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-
-    tx_clone.send(10).unwrap();
-    tx_clone.send(20).unwrap();
-    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    loop {
+        // let msg = rx1.recv().await.unwrap();
+        match rx1.recv().await {
+            Ok(msg) => {
+                println!("GOT = {}", msg);
+            }
+            Err(e) => {
+                println!("receiver Error: {}", e);
+                break;
+            }
+        }
+    }
+    println!("Exiting loop");
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 }
-

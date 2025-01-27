@@ -2,15 +2,11 @@ mod node;
 
 use axum::extract::{
     connect_info::ConnectInfo,
-    ws::{
-        Message::{self, Text},
-        WebSocket, WebSocketUpgrade,
-    },
+    ws::{Message::Text, WebSocket, WebSocketUpgrade},
     Path, State,
 };
 use axum::{response::IntoResponse, routing::any, Router};
 use axum_extra::TypedHeader;
-use futures::stream::SplitSink;
 use futures::{sink::SinkExt, stream::StreamExt};
 use node::common::unspanned_message;
 use std::collections::HashMap;
@@ -20,12 +16,6 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use zenoh::Config;
-
-#[derive(Clone)]
-struct AppState {
-    conn_topic_channels: Arc<Mutex<HashMap<String, Vec<Sender<String>>>>>,
-    // conn_topic_channels: Arc<Mutex<HashMap<String, Vec<String>>>>,
-}
 
 #[tokio::main]
 async fn main() {
@@ -38,9 +28,6 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // let mut state = AppState {
-    //     conn_topic_channels: Arc::new(Mutex::new(HashMap::new())),
-    // };
     let state = Arc::new(Mutex::new(HashMap::new()));
 
     let state_clone = Arc::clone(&state);
@@ -67,7 +54,7 @@ async fn ws_handler(
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Path(topic_name): Path<String>,
-    State(state): State<Arc<Mutex<HashMap<String, Vec<Sender<String>>>>>>,
+    State(state): State<Arc<Mutex<HashMap<String, Vec<(SocketAddr, Sender<String>)>>>>>,
 ) -> impl IntoResponse {
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
@@ -79,32 +66,29 @@ async fn ws_handler(
     let mut state_guard = state.lock().unwrap();
     let (tx, rx) = tokio::sync::broadcast::channel::<String>(10);
     if !state_guard.contains_key(&topic_name) {
-        tracing::error!("Creating topic {topic_name} in state");
-        state_guard.insert(topic_name.clone(), vec![tx.clone()]);
+        tracing::warn!("Creating topic {topic_name} in state");
+        state_guard.insert(topic_name.clone(), vec![(addr, tx.clone())]);
         drop(state_guard);
         let topic_name_clone = topic_name.clone();
         tokio::spawn(async move {
-            // subscribe_to_topic(topic_name_clone, tx).await;
             subscribe_to_topic(topic_name_clone, Arc::clone(&state)).await;
         });
     } else {
-        state_guard.get_mut(&topic_name).unwrap().push(tx.clone());
+        state_guard
+            .get_mut(&topic_name)
+            .unwrap()
+            .push((addr, tx.clone()));
         drop(state_guard);
-        // let topic_name_clone = topic_name.clone();
-        // tokio::spawn(async move {
-        //     subscribe_to_topic(topic_name_clone, tx).await;
-        // });
     }
 
     ws.on_upgrade(move |socket| handle_socket(socket, addr, topic_name, rx))
 }
 
-// async fn subscribe_to_topic(topic_name: String, tx: Sender<String>) {
 async fn subscribe_to_topic(
     topic_name: String,
-    state: Arc<Mutex<HashMap<String, Vec<Sender<String>>>>>,
+    state: Arc<Mutex<HashMap<String, Vec<(SocketAddr, Sender<String>)>>>>,
 ) {
-    tracing::error!("Launching a new task to subscribe to topic {topic_name}");
+    tracing::warn!("Launching a new task to subscribe to topic {topic_name}");
     let mut config = Config::default();
     config
         .insert_json5("mode", &serde_json::json!("client").to_string())
@@ -130,16 +114,39 @@ async fn subscribe_to_topic(
         let value = payload.to_string();
         let (value, _) = unspanned_message(value.clone()).unwrap();
 
-        tracing::info!("------------{}:- {} ", topic_name, value);
-        // tx.send(value).unwrap();
-        let state_guard = state.lock().unwrap();
-        if let Some(channels) = state_guard.get(&topic_name) {
-            for channel in channels {
-                channel.send(value.clone()).unwrap();
+        tracing::info!("{}:- {} ", topic_name, value);
+        let mut state_guard = state.lock().unwrap();
+        if let Some(channels) = state_guard.get_mut(&topic_name) {
+            // Collect all failed addresses
+            let mut failed_addresses = Vec::new();
+
+            // Attempt to send the message to each connected client
+            for (addr, channel) in channels.iter_mut() {
+                match channel.send(value.clone()) {
+                    Ok(_) => {
+                        println!("Sent {value} to {addr}");
+                    }
+                    Err(e) => {
+                        tracing::error!("Sending message to {addr} failed: {e}");
+                        failed_addresses.push(*addr); // Track the failed address
+                    }
+                }
+            }
+
+            // Remove clients that failed to receive the message
+            if !failed_addresses.is_empty() {
+                channels.retain(|(addr, _)| !failed_addresses.contains(addr));
+                tracing::warn!(
+                    "Removed failed clients for topic {topic_name}: {:?}",
+                    failed_addresses
+                );
+                tracing::error!("Channels: {:?}", channels);
+                break;
             }
         }
         drop(state_guard);
     }
+    println!("Exiting loop");
 }
 
 async fn handle_socket(
@@ -153,13 +160,14 @@ async fn handle_socket(
     tracing::info!("Websocket context {who} created for topic {topic_name}");
 
     while let Ok(value) = rx.recv().await {
-        tracing::info!("Sending message to {who} for topic {topic_name}");
+        // tracing::info!("Sending message to {who} for topic {topic_name}");
         match sender.send(Text(value.into())).await {
             Ok(_) => {}
             Err(e) => {
-                tracing::warn!("Receiver socket dropped for topic {topic_name}: {e}");
+                tracing::warn!("Receiver socket handle dropped for topic {topic_name}: {e}");
                 break;
             }
         }
     }
+    println!("Exiting loop");
 }
