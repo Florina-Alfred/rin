@@ -44,7 +44,7 @@ name = "ws"
 path = "src/websocket.rs"
 
 [[bin]]
-name = "cwb"
+name = "cws"
 path = "src/client_websocket.rs"
 
 [[bin]]
