@@ -1,7 +1,8 @@
 extern crate proc_macro;
+
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Fields};
+use syn::{parse_macro_input, DeriveInput, Fields, Meta, MetaList, Path};
 
 #[proc_macro_derive(Metrics)]
 pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
@@ -67,22 +68,82 @@ pub fn print_metrics_derive(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+// #[proc_macro_derive(Messages, attributes(serde))]
+// pub fn message_derive(input: TokenStream) -> TokenStream {
+//     // Parse the input token stream into a syntax tree
+//     let input = parse_macro_input!(input as DeriveInput);
+//
+//     // Get the struct name and existing attributes
+//     let name = &input.ident;
+//     let mut existing_serde = false;
+//
+//     // Check for existing `Serialize` and `Deserialize` derives
+//     for attr in &input.attrs {
+//         // Check if the attribute is a `derive` list
+//         if let Ok(Meta::List(MetaList { path, nested, .. })) = attr.parse_meta() {
+//             if path.is_ident("derive") {
+//                 // Check each nested meta item to see if it's `Serialize` or `Deserialize`
+//                 for meta in nested {
+//                     if let Meta::Path(ref path) = meta {
+//                         if path.is_ident("Serialize") || path.is_ident("Deserialize") {
+//                             existing_serde = true;
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//
+//     // Create a new derive list that includes `Messages` and `Serialize`/`Deserialize` if needed
+//     let mut derive_tokens = vec!["Messages"];
+//     if !existing_serde {
+//         derive_tokens.push("Serialize");
+//         derive_tokens.push("Deserialize");
+//     }
+//
+//     // Generate the new derive attribute with added `Serialize` and `Deserialize` if necessary
+//     let derive_tokens = derive_tokens
+//         .iter()
+//         .map(|s| syn::Ident::new(*s, proc_macro2::Span::call_site()));
+//
+//     // Generate the impl block for the Message trait
+//     let expanded = quote! {
+//         #[derive(#(#derive_tokens),*)]
+//         #input
+//
+//         impl Message for #name {
+//             async fn next(&mut self) -> Option<&mut Self> {
+//                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+//                 Some(self)
+//             }
+//
+//             fn ser(&self) -> String {
+//                 serde_json::to_string(&self).unwrap()
+//             }
+//
+//             fn deser(&self, msg: &String) -> Self {
+//                 serde_json::from_str(&msg).unwrap()
+//             }
+//         }
+//     };
+//
+//     // Convert the generated code back into a TokenStream
+//     TokenStream::from(expanded)
+// }
+
 #[proc_macro_derive(Messages)]
 pub fn message_derive(input: TokenStream) -> TokenStream {
-    // Parse the input as a Rust struct
+    // Parse the input token stream into a syntax tree
     let input = parse_macro_input!(input as DeriveInput);
 
-    let struct_name = &input.ident;
+    // Get the struct name
+    let name = &input.ident;
 
-    // Generate the code to implement the Message trait for the struct
+    // Generate the impl block for the Message trait
     let expanded = quote! {
-        use tokio::time;
-        // use serde::{Serialize, Deserialize};
-
-        // impl Message for #struct_name {}
-        impl Message for #struct_name {
-            asnyc fn next(&mut self) -> Option<&mut Self> {
-                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        impl Message for #name {
+            async fn next(&mut self) -> Option<&mut Self> {
+                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 Some(self)
             }
 
@@ -96,6 +157,6 @@ pub fn message_derive(input: TokenStream) -> TokenStream {
         }
     };
 
-    // Return the generated implementation as a TokenStream
+    // Convert the generated code back into a TokenStream
     TokenStream::from(expanded)
 }

@@ -14,9 +14,9 @@ async fn main() {
     let args = Args::parse();
     let _guard = common::init_tracing_subscriber();
 
-    let pub_msg_struct = SimpleMessage::new(Some(args.start), Some(10000));
+    // let pub_msg_struct = SimpleMessage::new(Some(args.start), Some(10000));
     // let pub_msg_struct = MachineMessage::default();
-    // let pub_msg_struct = MachineMessage::new("message 0".to_string(), 0);
+    let pub_msg_struct = MachineMessage::new("message 0".to_string(), 0);
     // let pub_msg_struct = UserMessage {
     //     number: "0".to_string(),
     //     value: "value 0".to_string(),

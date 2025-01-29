@@ -10,3 +10,5 @@ proc-macro = true
 syn = "2.0.96"
 quote = "1.0.38"
 proc-macro2 = "1.0.93"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"

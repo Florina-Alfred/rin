@@ -102,8 +102,8 @@ impl Message for UserMessage {
     }
 }
 
-// #[derive(Debug, Clone, Serialize, Deserialize, Metrics, Messages)]
-#[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
+#[derive(Debug, Clone, Serialize, Deserialize, Metrics, Messages)]
+// #[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,
@@ -124,18 +124,3 @@ impl Default for MachineMessage {
         }
     }
 }
-
-// impl Message for MachineMessage {
-//     // #[tracing::instrument]
-//     async fn next(&mut self) -> Option<&mut Self> {
-//         self.count += 1;
-//         self.message = format!("message {}", self.count);
-//         // std::thread::sleep(std::time::Duration::from_secs(1));
-//         if self.count > 10 {
-//             None
-//         } else {
-//             Some(self)
-//         }
-//         // Some(self)
-//     }
-// }
