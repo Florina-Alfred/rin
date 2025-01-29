@@ -88,6 +88,7 @@ tower-http = { version = "0.6.2", features = ["fs", "trace"] }
 rin_macros = { path = "rin_macros" }
 prost = "0.13.4"
 prost-types = "0.13.4"
+base64 = "0.22.1"
 
 [build-dependencies]
 prost-build = { version = "0.13.4" }

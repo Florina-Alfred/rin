@@ -1,69 +1,53 @@
-use prost::Message;
+use crate::node::common::{Message, Metric};
+use base64::Engine;
+use prost::Message as ProstMessage;
 use std::io::Cursor;
 
-pub mod report {
-    include!(concat!(env!("OUT_DIR"), "/report.rs"));
+pub mod simple_message {
+    // include!(concat!(env!("OUT_DIR"), "/SimpleMessage.rs"));
+    include!(concat!(env!("OUT_DIR"), "/simple_message.rs"));
 }
 
-struct Report {
-    pub name: String,
-    pub last_edited: f32,
-    pub total_edits: u32,
-}
+pub use simple_message::SimpleMessage;
+// pub use simple_message::InputRequest;
 
-impl Report {
-    pub fn new(name: String, last_edited: f32, total_edits: u32) -> Self {
-        Report {
-            name,
-            last_edited,
-            total_edits,
+impl Message for SimpleMessage {
+    async fn next(&mut self) -> Option<&mut Self> {
+        self.stream_num_metric += 1;
+        self.stream_test_1_metric += 2;
+        self.stream_test_2_metric += self.stream_test_1_metric - self.stream_num_metric;
+        // tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        if (self.stream_num_metric - self.start) < self.length {
+            // tracing::info!(
+            //     monotonic_counter.stream_num = self.stream_num_metric,
+            //     // monotonic_counter.stream_num = self.stream_num_metric,
+            //     "updating the SimpleMessage value",
+            // );
+            // tracing::error!(
+            //     "..........in..next..........Metric: {:?}",
+            //     self.collect_metrics()
+            // );
+            Some(self)
+        } else {
+            None
         }
     }
 
-    pub fn to_input_request(&self) -> report::InputRequest {
-        let mut input_request = report::InputRequest::default();
-        input_request.name = self.name.clone();
-        input_request.last_edited = self.last_edited;
-        input_request.total_edits = self.total_edits;
-        input_request
+    fn ser(&self) -> String {
+        let mut buf = Vec::new();
+        buf.reserve(self.encoded_len());
+        self.encode(&mut buf).unwrap();
+        base64::prelude::BASE64_STANDARD.encode(&buf)
     }
 
-    pub fn from_input_request(input_request: report::InputRequest) -> Self {
-        Report {
-            name: input_request.name,
-            last_edited: input_request.last_edited,
-            total_edits: input_request.total_edits,
-        }
+    fn deser(&self, msg: &String) -> Self {
+        let bytes = base64::prelude::BASE64_STANDARD.decode(msg).unwrap();
+        SimpleMessage::decode(&mut Cursor::new(bytes)).unwrap()
     }
 }
 
-pub fn create_input_request(name: String) -> report::InputRequest {
-    let mut input_request = report::InputRequest::default();
-    input_request.name = name;
-    input_request
-}
-
-pub fn serialize_report(input: &report::InputRequest) -> Vec<u8> {
-    let mut buf = Vec::new();
-    buf.reserve(input.encoded_len());
-    input.encode(&mut buf).unwrap();
-    buf
-}
-
-pub fn deserialize_report(buf: &[u8]) -> Result<report::InputRequest, prost::DecodeError> {
-    report::InputRequest::decode(&mut Cursor::new(buf))
-}
-
-fn main() -> Result<(), prost::DecodeError> {
-    let request = String::from("Hello, World!");
-
-    let report_request = create_input_request(request);
-    let request_vector = serialize_report(&report_request);
-
-    let request_deserialized_result = match deserialize_report(&request_vector) {
-        Ok(request_deserialized_result) => request_deserialized_result,
-        Err(e) => return Err(e),
-    };
-    println!("{:#?}", request_deserialized_result);
-    Ok(())
+impl Metric for SimpleMessage {
+    fn collect_metrics(&self) -> Option<Vec<(String, String)>> {
+        None
+    }
 }

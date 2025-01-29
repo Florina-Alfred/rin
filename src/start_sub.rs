@@ -4,7 +4,10 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::stream::{MachineMessage, SimpleMessage, UserMessage};
+// use msg::proto::InputRequest;
+use msg::proto::SimpleMessage;
+// use msg::stream::SimpleMessage;
+use msg::stream::{MachineMessage, UserMessage};
 use node::common;
 use tokio;
 
@@ -39,6 +42,12 @@ fn machine_message_callback(input: MachineMessage) {
     tracing::info!("Machine message callback:- {:?}", input);
 }
 
+#[allow(dead_code)]
+#[tracing::instrument]
+fn report_message_callback(input: SimpleMessage) {
+    tracing::info!("Report message callback:- {:?}", input);
+}
+
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
@@ -58,7 +67,8 @@ async fn main() {
             // user_message_callback,
             // user_message_callback,
             // machine_message_callback,
-            machine_message_callback,
+            // machine_message_callback,
+            report_message_callback,
         ],
     )
     .await;

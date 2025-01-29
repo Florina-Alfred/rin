@@ -30,6 +30,8 @@ pub trait Metric {
 
 pub trait Message {
     async fn next(&mut self) -> Option<&mut Self>;
+    // fn ser(&self) -> Vec<u8>;
+    // fn deser(&self, msg: &[u8]) -> Self;
     fn ser(&self) -> String;
     fn deser(&self, msg: &String) -> Self;
 }

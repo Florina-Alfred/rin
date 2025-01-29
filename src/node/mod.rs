@@ -72,7 +72,8 @@ impl<'a> Publisher<'a> {
 pub async fn start_publisher(
     name: &str,
     key_expr: &str,
-    mut payload: impl Message + Debug + Serialize + Metric,
+    mut payload: impl Message + Debug + Metric,
+    // mut payload: impl Message + Debug + Serialize + Metric,
     attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -234,7 +235,8 @@ pub async fn start_subscriber<T>(
     endpoints: Vec<&str>,
     callback: Vec<fn(T)>,
 ) where
-    T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    T: Default + Message + Metric + Clone + Debug,
+    // T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 
@@ -290,7 +292,10 @@ pub async fn start_subscriber<T>(
         span.set_parent(parent_context);
 
         let message = msg.deser(&value);
-        info!("Metric data: {:?}", message.collect_metrics());
+        if message.collect_metrics().is_some() {
+            info!("Metric data: {:?}", message.collect_metrics());
+        }
+        // info!("Metric data: {:?}", message.collect_metrics());
         match message.collect_metrics() {
             Some(metrics) => {
                 for (key, value) in metrics {

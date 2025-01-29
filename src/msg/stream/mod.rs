@@ -42,7 +42,7 @@ impl Message for SimpleMessage {
         self.stream_test_1_metric += 2;
         self.stream_test_2_metric += self.stream_test_1_metric - self.stream_num_metric;
         // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
@@ -102,6 +102,7 @@ impl Message for UserMessage {
     }
 }
 
+// #[derive(Debug, Clone, Metrics, Messages)]
 #[derive(Debug, Clone, Serialize, Deserialize, Metrics, Messages)]
 // #[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
 pub struct MachineMessage {

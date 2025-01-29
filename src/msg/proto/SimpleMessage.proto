@@ -1,0 +1,16 @@
+syntax = "proto3";
+package SimpleMessage;
+
+// message InputRequest {
+message SimpleMessage {
+  uint32 start = 1;
+  uint32 length = 2;
+  uint32 stream_num_metric = 3;
+  uint32 stream_test_1_metric = 4;
+  uint32 stream_test_2_metric = 5;
+  // string name = 1;
+  // float last_edited = 2;
+  // int32 total_edits = 3;
+}
+
+message OutputResponse { string message = 1; }
