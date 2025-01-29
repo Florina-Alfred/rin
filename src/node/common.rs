@@ -106,6 +106,7 @@ fn resource() -> Resource {
     )
 }
 
+#[allow(dead_code)]
 fn init_meteric_provider() -> SdkMeterProvider {
     let exporter = opentelemetry_otlp::MetricExporter::builder()
         .with_tonic()
@@ -154,6 +155,7 @@ fn init_log_provider() -> LoggerProvider {
     log_provider
 }
 
+#[allow(dead_code)]
 fn init_tracer_provider() -> TracerProvider {
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
