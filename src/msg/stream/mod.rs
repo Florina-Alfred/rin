@@ -61,6 +61,14 @@ impl Message for SimpleMessage {
             None
         }
     }
+
+    fn ser(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    fn deser(&self, msg: &String) -> Self {
+        serde_json::from_str(&msg).unwrap()
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Metrics)]
@@ -84,9 +92,18 @@ impl Message for UserMessage {
             Some(self)
         }
     }
+
+    fn ser(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    fn deser(&self, msg: &String) -> Self {
+        serde_json::from_str(&msg).unwrap()
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Metrics, Messages)]
+// #[derive(Debug, Clone, Serialize, Deserialize, Metrics, Messages)]
+#[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
 pub struct MachineMessage {
     pub message: String,
     pub count: u32,

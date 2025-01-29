@@ -29,25 +29,28 @@ pub trait Metric {
 }
 
 pub trait Message {
-    async fn next(&mut self) -> Option<&mut Self>
-    where
-        Self: Sized,
-    {
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        Some(self)
-    }
-    fn ser(&self) -> String
-    where
-        Self: Serialize,
-    {
-        serde_json::to_string(&self).unwrap()
-    }
-    fn deser(&self, msg: &String) -> Self
-    where
-        Self: for<'de> Deserialize<'de> + Debug,
-    {
-        serde_json::from_str(&msg).unwrap()
-    }
+    async fn next(&mut self) -> Option<&mut Self>;
+    fn ser(&self) -> String;
+    fn deser(&self, msg: &String) -> Self;
+    // async fn next(&mut self) -> Option<&mut Self>
+    // where
+    //     Self: Sized,
+    // {
+    //     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    //     Some(self)
+    // }
+    // fn ser(&self) -> String
+    // where
+    //     Self: Serialize,
+    // {
+    //     serde_json::to_string(&self).unwrap()
+    // }
+    // fn deser(&self, msg: &String) -> Self
+    // where
+    //     Self: for<'de> Deserialize<'de> + Debug,
+    // {
+    //     serde_json::from_str(&msg).unwrap()
+    // }
 }
 
 // #[tracing::instrument]

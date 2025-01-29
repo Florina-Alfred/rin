@@ -76,7 +76,24 @@ pub fn message_derive(input: TokenStream) -> TokenStream {
 
     // Generate the code to implement the Message trait for the struct
     let expanded = quote! {
-        impl Message for #struct_name {}
+        use tokio::time;
+        // use serde::{Serialize, Deserialize};
+
+        // impl Message for #struct_name {}
+        impl Message for #struct_name {
+            asnyc fn next(&mut self) -> Option<&mut Self> {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                Some(self)
+            }
+
+            fn ser(&self) -> String {
+                serde_json::to_string(&self).unwrap()
+            }
+
+            fn deser(&self, msg: &String) -> Self {
+                serde_json::from_str(&msg).unwrap()
+            }
+        }
     };
 
     // Return the generated implementation as a TokenStream

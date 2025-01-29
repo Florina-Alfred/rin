@@ -13,5 +13,19 @@ impl StringMessage {
     }
 }
 
-impl Message for StringMessage {}
+impl Message for StringMessage {
+    async fn next(&mut self) -> Option<&mut Self> {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        Some(self)
+    }
+
+    fn ser(&self) -> String {
+        self.data.clone()
+    }
+
+    fn deser(&self, msg: &String) -> Self {
+        Self { data: msg.clone() }
+    }
+}
+
 impl Metric for StringMessage {}
