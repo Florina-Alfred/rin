@@ -22,7 +22,6 @@ pub struct Publisher<'a> {
 
 #[allow(dead_code)]
 impl<'a> Publisher<'a> {
-    // #[tracing::instrument]
     pub async fn new(
         key_expr: &'a str,
         mode: &'a str,
@@ -68,7 +67,6 @@ impl<'a> Publisher<'a> {
 }
 
 #[allow(dead_code)]
-// #[tracing::instrument]
 pub async fn start_publisher(
     name: &str,
     key_expr: &str,
@@ -170,8 +168,7 @@ impl<T> Subscriber<T> {
         endpoints: Vec<&str>,
     ) -> Result<Subscriber<T>, zenoh::Error>
     where
-        T: Default + Message + Metric + Clone + Debug, // + Serialize
-                                                       // + for<'de> serde::Deserialize<'de>,
+        T: Default + Message + Metric + Clone + Debug,
     {
         // zenoh::init_log_from_env_or("error");
 
@@ -226,7 +223,6 @@ pub async fn start_subscriber<T>(
     callback: Vec<fn(T)>,
 ) where
     T: Default + Message + Metric + Clone + Debug,
-    // T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 
@@ -350,7 +346,6 @@ pub async fn start_subscriber<T>(
 }
 
 #[allow(dead_code)]
-// #[tracing::instrument]
 pub async fn start_subscriber_publisher<T, S>(
     name: &str,
     key_expr_sub: &str,
@@ -361,8 +356,6 @@ pub async fn start_subscriber_publisher<T, S>(
 ) where
     T: Default + Message + Metric + Clone + Debug,
     S: Default + Message + Metric + Clone + Debug,
-    // T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
-    // S: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 

@@ -6,8 +6,8 @@ use std::fmt::Debug;
 
 #[derive(Debug, Clone, Metrics, Default, Serialize, Deserialize)]
 pub struct SimpleMessage {
-    pub start: Option<u32>,
-    pub length: Option<u32>,
+    pub start: u32,
+    pub length: u32,
     pub stream_num_metric: u32,
     pub stream_test_1_metric: u32,
     pub stream_test_2_metric: u32,
@@ -18,16 +18,16 @@ impl SimpleMessage {
     pub fn new(start: Option<u32>, length: Option<u32>) -> Self {
         if let (Some(start), Some(length)) = (start, length) {
             SimpleMessage {
-                start: Some(start),
-                length: Some(length),
+                start,
+                length,
                 stream_num_metric: start as u32,
                 stream_test_1_metric: 0,
                 stream_test_2_metric: 0,
             }
         } else {
             SimpleMessage {
-                start: Some(0),
-                length: Some(10),
+                start: 0,
+                length: 10,
                 stream_num_metric: 0,
                 stream_test_1_metric: 0,
                 stream_test_2_metric: 0,
@@ -47,7 +47,7 @@ impl Message for SimpleMessage {
         // tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         // tokio::time::sleep(std::time::Duration::from_millis(1)).await;
         // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
-        if (self.stream_num_metric - self.start.unwrap()) < self.length.unwrap() {
+        if (self.stream_num_metric - self.start) < self.length {
             // tracing::info!(
             //     monotonic_counter.stream_num = self.stream_num_metric,
             //     // monotonic_counter.stream_num = self.stream_num_metric,

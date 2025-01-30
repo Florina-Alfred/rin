@@ -5,8 +5,8 @@ mod node;
 use args::Args;
 use clap::Parser;
 // use msg::proto::InputRequest;
-// use msg::proto::SimpleMessage;
-use msg::stream::SimpleMessage;
+use msg::proto::SimpleMessage;
+// use msg::stream::SimpleMessage;
 use msg::stream::{MachineMessage, UserMessage};
 use node::common;
 use tokio;
@@ -62,9 +62,9 @@ async fn main() {
             // generic_callback,
             // generic_callback,
             // stream_callback,
-            // stream_callback,
+            stream_callback,
             // user_message_callback,
-            user_message_callback,
+            // user_message_callback,
             // user_message_callback,
             // machine_message_callback,
             // machine_message_callback,
