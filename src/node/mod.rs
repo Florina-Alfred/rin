@@ -170,13 +170,8 @@ impl<T> Subscriber<T> {
         endpoints: Vec<&str>,
     ) -> Result<Subscriber<T>, zenoh::Error>
     where
-        T: Default
-            + Message
-            + Metric
-            + Clone
-            + Debug
-            + Serialize
-            + for<'de> serde::Deserialize<'de>,
+        T: Default + Message + Metric + Clone + Debug, // + Serialize
+                                                       // + for<'de> serde::Deserialize<'de>,
     {
         // zenoh::init_log_from_env_or("error");
 
@@ -205,13 +200,8 @@ impl<T> Subscriber<T> {
     #[tracing::instrument]
     pub async fn receive_msg(&self) -> Result<T, zenoh::Error>
     where
-        T: Default
-            + Message
-            + Metric
-            + Clone
-            + Debug
-            + Serialize
-            + for<'de> serde::Deserialize<'de>,
+        T: Default + Message + Metric + Clone + Debug, // + Serialize
+                                                       // + for<'de> serde::Deserialize<'de>,
     {
         let sample = self.subscriber.recv_async().await.unwrap();
         let payload = sample
@@ -369,8 +359,10 @@ pub async fn start_subscriber_publisher<T, S>(
     endpoints: Vec<&str>,
     maniputater: fn(T) -> S,
 ) where
-    T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
-    S: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    T: Default + Message + Metric + Clone + Debug,
+    S: Default + Message + Metric + Clone + Debug,
+    // T: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
+    // S: Default + Message + Metric + Clone + Debug + Serialize + for<'de> serde::Deserialize<'de>,
 {
     // zenoh::init_log_from_env_or("error");
 

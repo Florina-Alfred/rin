@@ -1,0 +1,8 @@
+syntax = "proto3";
+package LidarData;
+
+message LidarData {
+  uint32 home_x = 1;
+  uint32 home_y = 2;
+  repeated float lidar_data = 3;
+}

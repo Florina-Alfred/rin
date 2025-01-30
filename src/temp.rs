@@ -1,55 +1,31 @@
+mod msg;
 mod node;
 
-use base64::Engine;
-use node::common::Message;
-use prost::Message as ProstMessage;
-use std::io::Cursor;
-
-pub mod report {
-    include!(concat!(env!("OUT_DIR"), "/report.rs"));
-}
-
-use report::InputRequest;
-
-impl Message for InputRequest {
-    async fn next(&mut self) -> Option<&mut Self> {
-        self.last_edited += 2.0;
-        self.total_edits += 1;
-        Some(self)
-    }
-
-    fn ser(&self) -> String {
-        let mut buf = Vec::new();
-        buf.reserve(self.encoded_len());
-        self.encode(&mut buf).unwrap();
-        base64::prelude::BASE64_STANDARD.encode(&buf)
-    }
-
-    fn deser(&self, msg: &String) -> Self {
-        let bytes = base64::prelude::BASE64_STANDARD.decode(msg).unwrap();
-        InputRequest::decode(&mut Cursor::new(bytes)).unwrap()
-    }
-}
+use crate::node::common::Message;
+use msg::proto::LidarData;
 
 #[tokio::main]
 async fn main() {
-    let request = String::from("Hello, World!");
+    let mut data = Vec::new();
 
-    let mut local_copy = InputRequest {
-        name: request.clone(),
-        last_edited: 1.0,
-        total_edits: 1,
-    };
-    println!("Original: {:?}", local_copy);
+    for i in 0..3 {
+        data.push((i / 100) as f32);
+    }
 
-    local_copy.next().await;
-    local_copy.next().await;
-    local_copy.next().await;
-    println!("Update: {:?}", local_copy);
+    for _ in 0..5 {
+        let _ = data.iter_mut().map(|x| *x = *x + 1.0).collect::<Vec<_>>();
+        let ld = LidarData {
+            home_x: 1,
+            home_y: 2,
+            lidar_data: data.clone(),
+        };
 
-    let buf = local_copy.ser();
-    println!("Ser: {:?}", buf);
+        let ser = ld.ser();
+        println!("Serializing LidarData: {:?}", ser);
 
-    let deser = local_copy.deser(&buf);
-    println!("Deser: {:?}", deser);
+        let deser = ld.deser(&ser);
+        println!("Deserializing LidarData: {:?}", deser);
+
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
 }

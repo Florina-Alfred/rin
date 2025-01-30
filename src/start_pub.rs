@@ -6,8 +6,8 @@ use args::Args;
 use clap::Parser;
 // use msg::proto::InputRequest;
 #[allow(unused_imports)]
-use msg::proto::SimpleMessage;
-// use msg::stream::SimpleMessage;
+// use msg::proto::SimpleMessage;
+use msg::stream::SimpleMessage;
 #[allow(unused_imports)]
 use msg::stream::{MachineMessage, UserMessage};
 use node::common;
@@ -20,10 +20,10 @@ async fn main() {
 
     // let pub_msg_struct = SimpleMessage::new(Some(args.start), Some(10000));
     let pub_msg_struct = SimpleMessage {
-        // start: Some(args.start),
-        // length: Some(100000),
-        start: args.start,
-        length: 100000,
+        start: Some(args.start),
+        length: Some(100000),
+        // start: args.start,
+        // length: 100000,
         stream_num_metric: args.start,
         stream_test_1_metric: 0,
         stream_test_2_metric: 0,
