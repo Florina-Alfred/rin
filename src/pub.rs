@@ -12,7 +12,7 @@ use tokio;
 async fn main() {
     let args = Args::parse();
 
-    let subscriber = tracing_subscriber::fmt()
+    let trace_subscriber = tracing_subscriber::fmt()
         .compact()
         .with_file(true)
         .with_line_number(true)
@@ -20,7 +20,7 @@ async fn main() {
         .with_thread_names(false)
         .with_target(false)
         .finish();
-    tracing::subscriber::set_global_default(subscriber).unwrap();
+    tracing::subscriber::set_global_default(trace_subscriber).unwrap();
 
     let publisher = node::Publisher::new(
         args.input_key_expr.as_str(),
@@ -31,31 +31,38 @@ async fn main() {
     .await
     .unwrap();
 
-    let pub_msg_struct = SimpleMessage::new(Some(args.start), Some(0));
-    println!("-------Current Message: {:?}", pub_msg_struct);
+    let mut pub_msg_struct = SimpleMessage::new(Some(args.start), Some(0));
     for _ in 0..3 {
+        pub_msg_struct.stream_num_metric += 1;
+        pub_msg_struct.stream_test_1_metric += 2;
+        pub_msg_struct.stream_test_2_metric +=
+            pub_msg_struct.stream_test_1_metric - pub_msg_struct.stream_num_metric;
         publisher.publish(pub_msg_struct.clone()).await;
     }
 
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    let pub_msg_struct = UserMessage {
+    let mut pub_msg_struct = UserMessage {
         number: "1".to_string(),
         value: "value".to_string(),
         count: 0,
         bytes: vec![0, 1, 2, 3, 4],
     };
-    println!("-------Current Message: {:?}", pub_msg_struct);
     for _ in 0..3 {
+        pub_msg_struct.number = format!("{}", pub_msg_struct.count);
+        pub_msg_struct.value = format!("value {}", pub_msg_struct.count);
+        pub_msg_struct.count += 1;
+        pub_msg_struct.bytes = pub_msg_struct.bytes.iter().map(|x| x + 1).collect();
         publisher.publish(pub_msg_struct.clone()).await;
     }
 
     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    let pub_msg_struct = MachineMessage {
+    let mut pub_msg_struct = MachineMessage {
         message: "message".to_string(),
         count: 0,
     };
-    println!("-------Current Message: {:?}", pub_msg_struct);
     for _ in 0..3 {
+        pub_msg_struct.message = format!("message {}", pub_msg_struct.count);
+        pub_msg_struct.count += 1;
         publisher.publish(pub_msg_struct.clone()).await;
     }
 

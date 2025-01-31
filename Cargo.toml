@@ -89,6 +89,7 @@ rin_macros = { path = "rin_macros" }
 prost = "0.13.4"
 prost-types = "0.13.4"
 base64 = "0.22.1"
+plotpy = "1.11.0"
 
 [build-dependencies]
 prost-build = { version = "0.13.4" }

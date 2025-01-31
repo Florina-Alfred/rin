@@ -48,6 +48,7 @@ impl Metric for SimpleMessage {
 
 impl Message for LidarData {
     async fn next(&mut self) -> Option<&mut Self> {
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         Some(self)
     }
 

@@ -43,7 +43,7 @@ fn machine_message_callback(input: MachineMessage) {
 async fn main() {
     let args = Args::parse();
 
-    let subscriber = tracing_subscriber::fmt()
+    let trace_subscriber = tracing_subscriber::fmt()
         .compact()
         .with_file(true)
         .with_line_number(true)
@@ -51,7 +51,7 @@ async fn main() {
         .with_thread_names(false)
         .with_target(false)
         .finish();
-    tracing::subscriber::set_global_default(subscriber).unwrap();
+    tracing::subscriber::set_global_default(trace_subscriber).unwrap();
 
     let subscriber = node::Subscriber::new(
         args.output_key_expr.as_str(),

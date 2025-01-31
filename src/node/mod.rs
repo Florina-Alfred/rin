@@ -3,7 +3,7 @@ pub mod common;
 use common::SessionInfo;
 use common::{spanned_message, unspanned_message};
 use common::{Message, Metric};
-use serde::Serialize;
+// use serde::Serialize;
 use serde_json::json;
 use std::fmt::Debug;
 use tracing::{info, info_span, warn};
@@ -53,10 +53,14 @@ impl<'a> Publisher<'a> {
         })
     }
     #[tracing::instrument]
-    pub async fn publish(&self, message: impl Message + Debug + Serialize + Metric) {
+    pub async fn publish(&self, message: impl Message + Debug + Metric) {
         common::logger(format!("Publishing message: {:?}", message).to_string());
         info!("Publishing data: {:?}", message);
-        let buf = message.ser();
+        // let buf = message.ser();
+        let span = info_span!("Sending data", message = ?message);
+        info!("Sending data: {:?}", message);
+        let buf = spanned_message(message.ser(), span);
+
         self.publisher
             .put(buf)
             .encoding(Encoding::TEXT_PLAIN)
@@ -71,7 +75,6 @@ pub async fn start_publisher(
     name: &str,
     key_expr: &str,
     mut payload: impl Message + Debug + Metric,
-    // mut payload: impl Message + Debug + Serialize + Metric,
     attachment: Option<String>,
     mode: &str,
     endpoints: Vec<&str>,
@@ -197,8 +200,7 @@ impl<T> Subscriber<T> {
     #[tracing::instrument]
     pub async fn receive_msg(&self) -> Result<T, zenoh::Error>
     where
-        T: Default + Message + Metric + Clone + Debug, // + Serialize
-                                                       // + for<'de> serde::Deserialize<'de>,
+        T: Default + Message + Metric + Clone + Debug,
     {
         let sample = self.subscriber.recv_async().await.unwrap();
         let payload = sample
@@ -206,10 +208,20 @@ impl<T> Subscriber<T> {
             .try_to_string()
             .unwrap_or_else(|e| e.to_string().into());
 
-        let value = payload.clone().to_string();
-        info!("Received data: {}", value);
+        // let value = payload.clone().to_string();
+        // info!("Received data: {}", value);
+        // return Ok(self.default.deser(&value));
 
-        return Ok(self.default.deser(&value));
+        let value = payload.to_string();
+        // f(msg.deser(&value));
+        let (value, span) = unspanned_message(value.clone()).unwrap();
+        let parent_context = span.extract();
+        let span = info_span!("Received data", payload = ?value);
+        span.set_parent(parent_context);
+
+        let msg = T::default();
+        let message = msg.deser(&value);
+        Ok(message)
     }
 }
 

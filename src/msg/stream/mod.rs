@@ -126,3 +126,39 @@ impl Default for MachineMessage {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
+pub struct LidarData {
+    pub home_x: f32,
+    pub home_y: f32,
+    pub lidar_data_x_history: Vec<f32>,
+    pub lidar_data_y_history: Vec<f32>,
+}
+
+impl LidarData {
+    #[allow(dead_code)]
+    pub fn new(home_x: f32, home_y: f32) -> Self {
+        LidarData {
+            home_x,
+            home_y,
+            lidar_data_x_history: Vec::new(),
+            lidar_data_y_history: Vec::new(),
+        }
+    }
+}
+
+impl Message for LidarData {
+    // #[tracing::instrument]
+    async fn next(&mut self) -> Option<&mut Self> {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        Some(self)
+    }
+
+    fn ser(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    fn deser(&self, msg: &String) -> Self {
+        serde_json::from_str(&msg).unwrap()
+    }
+}

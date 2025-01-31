@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Circle Drawer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block; /* Ensures canvas fills the screen */
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    // Set up the canvas
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Resize the canvas to full screen
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Connect to the WebSocket server
+    const socket = new WebSocket('ws://localhost:3212/ws/sub/test_1');
+
+    // Function to draw a circle at a specific position
+    function drawCircle(x, y, radius, color) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+
+    // Function to draw the home position circle
+    function drawHomeCircle(home_x, home_y) {
+        const radius = 20;
+        
+        // Convert home_x and home_y to canvas coordinates
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Calculate the position for the home circle
+        const x = centerX + home_x * canvas.width / 2;  // Scale to fit within the canvas
+        const y = centerY - home_y * canvas.height / 2; // Flip Y axis to match screen coordinates
+
+        // Draw the red circle
+        drawCircle(x, y, radius, 'red');
+    }
+
+    // Function to draw blue circles for lidar data
+    function drawLidarCircles(lidar_data_x_history, lidar_data_y_history) {
+        const radius = 10; // Smaller radius for lidar points
+
+        // Iterate over the lidar data and draw each point
+        for (let i = 0; i < lidar_data_x_history.length; i++) {
+            const lidar_x = lidar_data_x_history[i];
+            const lidar_y = lidar_data_y_history[i];
+
+            // Convert lidar_x and lidar_y to canvas coordinates
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Calculate the position for the lidar circle
+            const x = centerX + lidar_x * canvas.width / 2;  // Scale to fit within the canvas
+            const y = centerY - lidar_y * canvas.height / 2; // Flip Y axis to match screen coordinates
+
+            // Draw the blue circle
+            drawCircle(x, y, radius, 'blue');
+        }
+    }
+
+    // WebSocket event handlers
+    socket.onopen = () => {
+        console.log("Connected to WebSocket server.");
+    };
+
+    socket.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the home position (red circle)
+            drawHomeCircle(data.home_x, data.home_y);
+
+            // Draw the lidar data points (blue circles)
+            drawLidarCircles(data.lidar_data_x_history, data.lidar_data_y_history);
+        } catch (e) {
+            console.error("Error parsing message: " + e.message);
+        }
+    };
+
+    socket.onerror = (error) => {
+        console.error(`WebSocket error: ${error.message}`);
+    };
+
+    socket.onclose = () => {
+        console.log("Disconnected from WebSocket server.");
+    };
+</script>
+
+</body>
+</html>
+
