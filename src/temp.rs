@@ -1,93 +1,123 @@
-mod args;
-mod msg;
-mod node;
-
-use crate::node::common::Message;
-use clap::Parser;
-#[allow(unused_imports)]
-// use msg::proto::LidarData;
-use msg::stream::LidarData;
-use std::collections::VecDeque;
-use std::f32::consts::PI;
+use gstreamer::prelude::*;
+use gstreamer_app::AppSink; // Correct import from gstreamer_app
+use opencv::core::MatTraitConst;
+use opencv::highgui; // For imshow and waitKey
+use opencv::prelude::*; // Import the necessary OpenCV traits // For mat_size()
 
 #[tokio::main]
 async fn main() {
-    let args = args::Args::parse();
-    let _guard = node::common::init_tracing_subscriber();
+    gstreamer::init().expect("Failed to initialize GStreamer");
 
-    let r = 1.0;
-    let lidar_capacity = 150;
-    let mut lidar_data_x_history = VecDeque::with_capacity(lidar_capacity);
-    let mut lidar_data_y_history = VecDeque::with_capacity(lidar_capacity);
+    let pipeline = gstreamer::Pipeline::with_name("test-pipeline");
 
-    // const N: usize = 30;
-    const N: usize = 360;
-    // for i in 0..N {
-    let mut i = 0;
-    loop {
-        i += 1;
-
-        // let (x, y) = (
-        //     r * f32::sin(((i as f32) * 2.0 * PI) / ((N - 1) as f32)),
-        //     r * f32::cos(((i as f32) * 2.0 * PI) / ((N - 1) as f32)),
-        // );
-
-        // let (y, x) = (
-        //     r * f32::sin(((i as f32) * 2.0 * PI as f32) / (((N / 1) - 1) as f32)),
-        //     r * f32::cos(((i as f32) * 2.0 * PI as f32) / (((N / 2) - 1) as f32)),
-        // );
-
-        let (x, y) = (
-            r * f32::sin(((i as f32) * 2.0 * PI as f32) / (((N / 1) - 1) as f32)),
-            r * f32::cos(((i as f32) * 2.0 * PI as f32) / (((N / 2) - 1) as f32)),
-        );
-
-        lidar_data_x_history.push_back(x);
-        lidar_data_y_history.push_back(y);
-        if lidar_data_x_history.len() > lidar_capacity {
-            lidar_data_x_history.pop_front();
-            lidar_data_y_history.pop_front();
-        }
-
-        println!(
-            "Lidar Data: {:?}, {:?} with size: {:?}",
-            lidar_data_x_history,
-            lidar_data_y_history,
-            lidar_data_y_history.len()
-        );
-
-        let ld = LidarData {
-            home_x: x,
-            home_y: y,
-            lidar_data_x_history: lidar_data_x_history.iter().map(|x| *x).collect(),
-            lidar_data_y_history: lidar_data_y_history.iter().map(|y| *y).collect(),
-        };
-        println!("Original LidarData: {:?}", ld);
-
-        let ser = ld.ser();
-        println!("Serializing LidarData: {:?}", ser);
-
-        let deser = ld.deser(&ser);
-        println!("Deserializing LidarData: {:?}", deser);
-
-        let publisher = node::Publisher::new(
-            "test_1",
-            args.mode.as_str(),
-            None,
-            args.endpoints.iter().map(|x| x.as_str()).collect(),
+    let rtspsrc = gstreamer::ElementFactory::make("rtspsrc")
+        .name("rtspsrc")
+        .property_from_str(
+            "location",
+            format!("rtsp://0.0.0.0:8554/{}", "tester").as_str(),
         )
-        .await
-        .unwrap();
+        .property_from_str("latency", "0")
+        .build()
+        .expect("Failed to create rtspsrc element");
 
-        publisher.publish(ld.clone()).await;
+    let decodebin = gstreamer::ElementFactory::make("decodebin")
+        .name("decodebin")
+        .build()
+        .expect("Failed to create decodebin element");
 
-        // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-        // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-        // tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-        tokio::time::sleep(std::time::Duration::from_millis(1)).await;
-        // tokio::time::sleep(std::time::Duration::from_micros(10)).await;
-        // tokio::time::sleep(std::time::Duration::from_micros(1)).await;
-        // tokio::time::sleep(std::time::Duration::from_nanos(10)).await;
-        // tokio::time::sleep(std::time::Duration::from_nanos(1)).await;
+    let videoconvert = gstreamer::ElementFactory::make("videoconvert")
+        .name("videoconvert")
+        .build()
+        .expect("Failed to create videoconvert element");
+
+    let appsink = gstreamer::ElementFactory::make("appsink")
+        .name("appsink")
+        .property_from_str("sync", "false") // Optional: disable synchronization
+        .build()
+        .expect("Failed to create appsink element");
+
+    pipeline
+        .add_many(&[&rtspsrc, &decodebin, &videoconvert, &appsink])
+        .expect("Failed to add elements to the pipeline");
+
+    rtspsrc.connect_pad_added({
+        let decodebin = decodebin.clone();
+        move |_, pad| {
+            let decodebin_pad = decodebin.static_pad("sink").unwrap();
+            pad.link(&decodebin_pad)
+                .expect("Failed to link rtspsrc to decodebin");
+        }
+    });
+
+    decodebin.connect_pad_added({
+        let videoconvert = videoconvert.clone();
+        move |_, pad| {
+            if let Some(sinkpad) = videoconvert.static_pad("sink") {
+                pad.link(&sinkpad)
+                    .expect("Failed to link decodebin to videoconvert");
+            }
+        }
+    });
+
+    videoconvert
+        .link(&appsink)
+        .expect("Failed to link videoconvert to appsink");
+
+    pipeline
+        .set_state(gstreamer::State::Playing)
+        .expect("Failed to set pipeline to Playing");
+
+    let bus = pipeline.bus().unwrap();
+    // Correctly access appsink and pull frames
+    let appsink = pipeline.by_name("appsink").unwrap();
+    let appsink = appsink.dynamic_cast::<AppSink>().unwrap(); // Cast to AppSink
+    let mut counter = 0;
+    for msg in bus.iter_timed(gstreamer::ClockTime::NONE) {
+        counter += 1;
+        match msg.view() {
+            gstreamer::MessageView::Eos(..) => {
+                println!("End of Stream");
+                break;
+            }
+            gstreamer::MessageView::Error(err) => {
+                eprintln!(
+                    "Error: {}: {}",
+                    err.error(),
+                    err.debug()
+                        .unwrap_or_else(|| String::from("No debug info").into())
+                );
+                break;
+            }
+            _ => {
+                match appsink.pull_sample() {
+                    Ok(sample) => {
+                        let buffer = sample.buffer().unwrap();
+                        let map = buffer.map_readable().unwrap();
+                        let raw_data = map.as_slice();
+
+                        // Specify the correct type (e.g., u8) for from_bytes
+                        let frame = opencv::core::Mat::from_bytes::<u8>(raw_data).unwrap();
+
+                        // Correctly unwrap mat_size()
+                        let frame_size = frame.mat_size();
+                        println!("{}.Frame size: {:?}", counter, frame_size);
+
+                        highgui::imshow("Video", &frame).unwrap();
+                        if highgui::wait_key(1).unwrap() == 27 {
+                            // ESC key to exit
+                            break;
+                        }
+                    }
+                    Err(_) => {
+                        println!("No more frames to retrieve.");
+                        break;
+                    }
+                }
+            } // _ => (),
+        }
     }
+
+    pipeline
+        .set_state(gstreamer::State::Null)
+        .expect("Failed to set pipeline to Null");
 }

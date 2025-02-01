@@ -2,8 +2,9 @@ syntax = "proto3";
 package LidarData;
 
 message LidarData {
-  float home_x = 1;
-  float home_y = 2;
-  repeated float lidar_data_x_history = 3;
-  repeated float lidar_data_y_history = 4;
+  uint32 counter = 1;
+  float home_x = 2;
+  float home_y = 3;
+  repeated float lidar_data_x_history = 4;
+  repeated float lidar_data_y_history = 5;
 }

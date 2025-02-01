@@ -127,8 +127,9 @@ impl Default for MachineMessage {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Metrics)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Metrics)]
 pub struct LidarData {
+    pub counter: u32,
     pub home_x: f32,
     pub home_y: f32,
     pub lidar_data_x_history: Vec<f32>,
@@ -139,6 +140,7 @@ impl LidarData {
     #[allow(dead_code)]
     pub fn new(home_x: f32, home_y: f32) -> Self {
         LidarData {
+            counter: 0,
             home_x,
             home_y,
             lidar_data_x_history: Vec::new(),
@@ -150,6 +152,33 @@ impl LidarData {
 impl Message for LidarData {
     // #[tracing::instrument]
     async fn next(&mut self) -> Option<&mut Self> {
+        let r = 1.0;
+        self.counter += 1;
+        // let (x, y) = (
+        //     r * f32::sin(((self.counter as f32) * 2.0 * std::f32::consts::PI) / ((360 - 1) as f32)),
+        //     r * f32::cos(((self.counter as f32) * 2.0 * std::f32::consts::PI) / ((360 - 1) as f32)),
+        // );
+
+        let (y, x) = (
+            r * f32::sin(
+                ((self.counter as f32) * 2.0 * std::f32::consts::PI) / (((360 / 1) - 1) as f32),
+            ),
+            r * f32::cos(
+                ((self.counter as f32) * 2.0 * std::f32::consts::PI) / (((360 / 2) - 1) as f32),
+            ),
+        );
+
+        // let (x, y) = (
+        //     r * f32::sin(((self.counter as f32) * 2.0 * std::f32::consts::PI) / (((360 / 1) - 1) as f32)),
+        //     r * f32::cos(((self.counter as f32) * 2.0 * std::f32::consts::PI) / (((360 / 2) - 1) as f32)),
+        // );
+        self.lidar_data_x_history.push(x);
+        self.lidar_data_y_history.push(y);
+        if self.lidar_data_x_history.len() > 100 {
+            self.lidar_data_x_history.remove(0);
+            self.lidar_data_y_history.remove(0);
+        }
+
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         Some(self)
     }

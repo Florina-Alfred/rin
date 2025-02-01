@@ -12,7 +12,7 @@ fn main() {
     // Create the elements
     let rtspsrc = ElementFactory::make("rtspsrc")
         .name("rtspsrc")
-        .property_from_str("location", "rtsp://localhost:8554/tester")
+        .property_from_str("location", "rtsp://0.0.0.0:8554/tester")
         .property_from_str("latency", "0")
         .build()
         .expect("Failed to create rtspsrc element");

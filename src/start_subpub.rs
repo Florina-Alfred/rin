@@ -4,8 +4,8 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-use msg::proto::SimpleMessage;
-// use msg::stream::SimpleMessage;
+// use msg::proto::SimpleMessage;
+use msg::stream::SimpleMessage;
 use msg::stream::{MachineMessage, UserMessage};
 use node::common;
 // use node::common::PropagationContext;

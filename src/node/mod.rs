@@ -472,7 +472,9 @@ pub async fn start_subscriber_publisher<T, S>(
 }
 
 use gstreamer::prelude::*;
+use gstreamer::MessageView;
 use gstreamer::{ElementFactory, Pipeline, State};
+use std::sync::{Arc, Mutex};
 
 #[allow(dead_code)]
 pub async fn start_video_pub(device: &str, location: &str) {
@@ -542,11 +544,8 @@ pub async fn start_video_pub(device: &str, location: &str) {
         .expect("Failed to set pipeline to Null");
 }
 
-use gstreamer::MessageView;
-use std::sync::{Arc, Mutex};
-
 #[allow(dead_code)]
-pub async fn start_video_sub(locaion: &str) {
+pub async fn start_video_sub(location: &str) {
     gstreamer::init().expect("Failed to initialize GStreamer");
 
     let pipeline = Pipeline::with_name("test-pipeline");
@@ -555,7 +554,7 @@ pub async fn start_video_sub(locaion: &str) {
         .name("rtspsrc")
         .property_from_str(
             "location",
-            format!("rtsp://localhost:8554/{}", locaion).as_str(),
+            format!("rtsp://0.0.0.0:8554/{}", location).as_str(),
         )
         .property_from_str("latency", "0")
         .build()

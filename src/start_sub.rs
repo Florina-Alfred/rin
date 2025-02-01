@@ -2,11 +2,11 @@ mod args;
 mod msg;
 mod node;
 
+#[allow(unused_imports)]
 use args::Args;
 use clap::Parser;
-// use msg::proto::InputRequest;
-use msg::proto::SimpleMessage;
-// use msg::stream::SimpleMessage;
+// use msg::proto::{LidarData, SimpleMessage};
+use msg::stream::{LidarData, SimpleMessage};
 use msg::stream::{MachineMessage, UserMessage};
 use node::common;
 use tokio;
@@ -48,6 +48,12 @@ fn report_message_callback(input: SimpleMessage) {
     tracing::info!("Report message callback:- {:?}", input);
 }
 
+#[allow(dead_code)]
+#[tracing::instrument]
+fn lidar_data_callback(input: LidarData) {
+    tracing::warn!("Lidar data callback: {:?}", input);
+}
+
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
@@ -61,14 +67,15 @@ async fn main() {
         vec![
             // generic_callback,
             // generic_callback,
-            // stream_callback,
             stream_callback,
+            // stream_callback,
             // user_message_callback,
             // user_message_callback,
             // user_message_callback,
             // machine_message_callback,
             // machine_message_callback,
             // report_message_callback,
+            // lidar_data_callback,
         ],
     )
     .await;
