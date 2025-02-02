@@ -4,8 +4,8 @@ mod node;
 
 use args::Args;
 use clap::Parser;
-#[allow(unused_imports)]
 // use msg::proto::{LidarData, SimpleMessage};
+#[allow(unused_imports)]
 use msg::stream::{LidarData, SimpleMessage};
 #[allow(unused_imports)]
 use msg::stream::{MachineMessage, UserMessage};
