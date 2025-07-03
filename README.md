@@ -21,9 +21,9 @@ Rin is a modern, high-performance Rust framework for building distributed, real-
 ### Installation
 Clone the repository and build the project:
 ```bash
-$ git clone https://github.com/florina-Alfred/rin
-$ cd rin
-$ cargo build --release
+ git clone https://github.com/florina-Alfred/rin
+ cd rin
+ cargo build --release
 ```
 
 This will build all binaries under `target/release/`.
@@ -49,28 +49,28 @@ Below are some of the key CLI tools provided by Rin:
 
 #### Start a Subscriber
 ```bash
-$ ./target/release/ss --output-key-expr demo/topic
+ ./target/release/ss --output-key-expr demo/topic
 ```
 
 #### Start a Publisher
 ```bash
-$ ./target/release/sp --input-key-expr demo/topic --start 42
+ ./target/release/sp --input-key-expr demo/topic --start 42
 ```
 
 #### Video Streaming
 - Start video publisher:
   ```bash
-  $ ./target/release/vp
+   ./target/release/vp
   ```
 - Start video subscriber:
   ```bash
-  $ ./target/release/vs
+   ./target/release/vs
   ```
 
 #### WebSocket Bridge
 - Start the WebSocket server:
   ```bash
-  $ ./target/release/ws
+   ./target/release/ws
   ```
 
 ## Comparison with ROS
