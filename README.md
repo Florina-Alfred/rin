@@ -21,7 +21,7 @@ Rin is a modern, high-performance Rust framework for building distributed, real-
 ### Installation
 Clone the repository and build the project:
 ```bash
-$ git clone <this_repo_url>
+$ git clone https://github.com/florina-Alfred/rin
 $ cd rin
 $ cargo build --release
 ```
@@ -87,6 +87,4 @@ $ ./target/release/sp --input-key-expr demo/topic --start 42
 | Platform           | Linux, cross-platform (Rust)      | Linux, some Windows/macOS support |
 | Extensibility      | Rust traits/macros                | ROS nodes/packages/plugins        |
 
-## License
-MIT
 
