@@ -80,7 +80,7 @@ Open another terminal and run:
 | Feature            | Rin                               | ROS (Robot Operating System)      |
 |--------------------|-----------------------------------|-----------------------------------|
 | Language           | Rust                              | C++, Python, others               |
-| Messaging Backend  | Zenoh                            | Custom ROS, DDS, ZeroMQ, etc.     |
+| Messaging Backend  | Zenoh                             | DDS                               |
 | Metrics/Tracing    | Built-in with tracing/macros      | Add-ons, not default              |
 | Video Streaming    | RTSP/MJPEG via GStreamer/OpenCV   | ROS topics, image_transport       |
 | Liveliness         | Built-in via Zenoh                | Node heartbeat, DDS QoS           |
