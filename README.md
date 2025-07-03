@@ -1,4 +1,4 @@
-# Rin: Rust Industrial Networking Framework
+# Rin: Robotics INterface Framework
 
 Rin is a modern, high-performance Rust framework for building distributed, real-time, and streaming network applications. It provides a set of robust tools and binaries for publish/subscribe messaging, video streaming, liveliness tracking, and WebSocket communication, leveraging the Zenoh protocol, async Rust, and strong observability via tracing and metrics.
 
@@ -34,16 +34,16 @@ Below are some of the key CLI tools provided by Rin:
 
 | Binary     | Description                                 |
 |------------|---------------------------------------------|
-| `sp`       | Start a publisher (producer)                |
-| `ss`       | Start a subscriber (consumer)               |
-| `ssp`      | Start a sub-pub (subscriber-publisher) node |
-| `p`        | Standalone publisher                        |
-| `s`        | Standalone subscriber                       |
-| `vp`       | Start RTSP video publisher                  |
-| `vs`       | Start RTSP video subscriber                 |
-| `ws`       | WebSocket server bridge                     |
-| `cws`      | WebSocket client                            |
-| `live`     | Liveliness subscriber                       |
+| `sp`       | **S**tart **P**ublisher                     |
+| `ss`       | **S**tart **S**ubscriber                    |
+| `ssp`      | **S**tart **S**ubscriber-**P**ublisher node |
+| `p`        | **P**ublisher (bare/standalone)             |
+| `s`        | **S**ubscriber (bare/standalone)            |
+| `vp`       | **V**ideo **P**ublisher (RTSP)              |
+| `vs`       | **V**ideo **S**ubscriber (RTSP)             |
+| `ws`       | **W**ebSocket **S**erver bridge             |
+| `cws`      | **C**lient **W**eb**S**ocket                |
+| `live`     | **L**iveliness **S**ubscriber               |
 
 ### Example: Publish and Subscribe
 
@@ -61,10 +61,12 @@ Open another terminal and run:
 
 #### Video Streaming
 - Start video publisher:
+  Open a new terminal and run:
   ```bash
   ./target/release/vp
   ```
 - Start video subscriber:
+  Open another terminal and run:
   ```bash
   ./target/release/vs
   ```
@@ -77,7 +79,7 @@ Open another terminal and run:
 
 ## Comparison with ROS
 
-| Feature            | Rin                               | ROS (Robot Operating System)      |
+| feature            | rin                               | ros (robot operating system)      |
 |--------------------|-----------------------------------|-----------------------------------|
 | Language           | Rust                              | C++, Python, others               |
 | Messaging Backend  | Zenoh                             | DDS                               |
